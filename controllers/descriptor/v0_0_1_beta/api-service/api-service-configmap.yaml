@@ -1,0 +1,23 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: klovercloud-api-service-envar-config
+  namespace: klovercloud
+data:
+  RUN_MODE: "PRODUCTION"
+  SERVER_PORT: "8080"
+  KLOVERCLOUD_CI_INTEGRATION_MANAGER_URL: "http://klovercloud-integration-manager.klovercloud.svc.cluster.local/api/v1"
+  KLOVERCLOUD_CI_EVENT_STORE: "http://klovercloud-ci-event-bank.klovercloud.svc.cluster.local/api/v1"
+  KLOVERCLOUD_CI_EVENT_STORE_WS: "ws://klovercloud-ci-event-bank.klovercloud.svc.cluster.local/api/v1"
+  LIGHTHOUSE_COMMAND_SERVER_URL: "http://klovercloud-ci-light-house-command.klovercloud.svc.cluster.local/api/v1"
+  LIGHTHOUSE_QUERY_SERVER_URL: "http://klovercloud-ci-light-house-query.klovercloud.svc.cluster.local/api/v1"
+  PUBLIC_KEY: ""
+  ENABLE_AUTHENTICATION: "true"
+  JAEGER_AGENT_HOST: "localhost"
+  JAEGER_SAMPLER_TYPE: "const"
+  JAEGER_SAMPLER_PARAM: "1"
+  JAEGER_REPORTER_LOG_SPANS: "true"
+  JAEGER_SERVICE_NAME: "api-service"
+  ENABLE_OPENTRACING: "false"
+  PRIVATE_KEY_INTERNAL_CALL: ""
+  PUBLIC_KEY_INTERNAL_CALL: ""

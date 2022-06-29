@@ -1,0 +1,32 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: klovercloud-security-envar-config
+  namespace: klovercloud
+data:
+  RUN_MODE: "PRODUCTION"
+  MONGO_SERVER: "${mongo_server}"
+  MONGO_PORT: "${mongo_port}"
+  DATABASE_NAME: "klovercloudcd-security"
+  SERVER_PORT: "8080"
+  DATABASE: "MONGO"
+  REGULAR_TOKEN_LIFETIME: "300000"
+  CTL_TOKEN_LIFETIME: "311040000000"
+  PRIVATE_KEY:
+  PUBLIC_KEY:
+  MAIL_SERVER_HOST_EMAIL: ""
+  MAIL_SERVER_HOST_EMAIL_SECRET: ""
+  SMTP_HOST: "smtp.gmail.com"
+  SMTP_PORT: "587"
+  RESOURCES: "user,pipeline,process,company,repository,application"
+  PERMISSIONS: "CREATE,READ,UPDATE,DELETE"
+  API_SERVER_URL: "http://klovercloud-api-service.klovercloud.svc.cluster.local/api/v1"
+  APPLICATION_CREATION_ENABLED: "true"
+  INTEGRATION_MANAGER_URL: "http://klovercloud-integration-manager.klovercloud.svc.cluster.local/api/v1"
+  USER_FIRST_NAME: "${user_first_name}"
+  USER_LAST_NAME: "${user_last_name}"
+  USER_EMAIL: "user_email"
+  USER_PHONE: "${user_phone}"
+  USER_AUTH_TYPE: "password"
+  USER_PASSWORD: "${user_password}"
+  COMPANY_NAME: "${company_name}"
