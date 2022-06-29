@@ -1,0 +1,6 @@
+apiVersion: base.cd.klovercloud.com/v1alpha1
+kind: KlovercloudCD
+metadata:
+  name: klovercloudcd-sample
+spec:
+  # TODO(user): Add fields here

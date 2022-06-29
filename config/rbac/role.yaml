@@ -1,0 +1,33 @@
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  creationTimestamp: null
+  name: manager-role
+rules:
+- apiGroups:
+  - base.cd.klovercloud.com
+  resources:
+  - klovercloudcds
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - base.cd.klovercloud.com
+  resources:
+  - klovercloudcds/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - base.cd.klovercloud.com
+  resources:
+  - klovercloudcds/status
+  verbs:
+  - get
+  - patch
+  - update
