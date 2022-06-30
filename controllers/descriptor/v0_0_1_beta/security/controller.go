@@ -26,6 +26,15 @@ type security struct {
 	Error error
 }
 
+func (s security) ModifyService(namespace string) service.Security {
+	if s.Service.ObjectMeta.Labels==nil{
+		s.Service.ObjectMeta.Labels=make(map[string]string)
+	}
+	s.Service.ObjectMeta.Labels["app"]="klovercloudCD"
+	s.Service.ObjectMeta.Namespace=namespace
+	return s
+}
+
 func (s security) ApplyService() error {
 	return s.Client.Create(context.Background(), &s.Service)
 }
