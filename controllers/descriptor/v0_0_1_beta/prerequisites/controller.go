@@ -6,9 +6,12 @@ import (
 	"fmt"
 	"github.com/klovercloud-ci-cd/klovercloudcd-operator/api/v1alpha1"
 	"github.com/klovercloud-ci-cd/klovercloudcd-operator/controllers/descriptor/service"
+	"github.com/klovercloud-ci-cd/klovercloudcd-operator/controllers/descriptor/v0_0_1_beta/utility"
+	"github.com/klovercloud-ci-cd/klovercloudcd-operator/enums"
 	"io/ioutil"
 	coreV1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/yaml"
 	"k8s.io/client-go/kubernetes/scheme"
 	"log"
@@ -19,8 +22,51 @@ import (
 type prerequisites struct {
 	Secret           coreV1.Secret
 	Client           client.Client
+	Configmap        coreV1.ConfigMap
 	TektonDescriptor []unstructured.Unstructured
 	Error            error
+}
+
+func (p prerequisites) ModifySecurityConfigMap(namespace string, db v1alpha1.DB, security v1alpha1.Security) service.Prerequisites {
+	found := &coreV1.ConfigMap{}
+	_ = p.Client.Get(context.Background(), types.NamespacedName{Name: "klovercloud-security-envar-config", Namespace: namespace}, found)
+	if found.Name != "" {
+		p.Configmap.Data["PRIVATE_KEY"] = found.Data["PRIVATE_KEY"]
+		p.Configmap.Data["PUBLIC_KEY"] = found.Data["PUBLIC_KEY"]
+	} else {
+		private, public, err := utility.New().Generate()
+		if err != nil {
+			p.Error = err
+			log.Println("[ERROR]: Failed to modify secrets configmap." + err.Error())
+		}
+		p.Configmap.Data["PRIVATE_KEY"] = string(private)
+		p.Configmap.Data["PUBLIC_KEY"] = string(public)
+	}
+	if p.Configmap.ObjectMeta.Labels == nil {
+		p.Configmap.ObjectMeta.Labels = make(map[string]string)
+	}
+	p.Configmap.ObjectMeta.Labels["app"] = "klovercloudCD"
+	p.Configmap.ObjectMeta.Namespace = namespace
+	p.Configmap.Data["MAIL_SERVER_HOST_EMAIL"] = security.MailServerHostEmail
+	p.Configmap.Data["MAIL_SERVER_HOST_EMAIL_SECRET"] = security.MailServerHostEmailSecret
+	p.Configmap.Data["SMTP_HOST"] = security.SMTPHost
+	p.Configmap.Data["SMTP_PORT"] = security.SMTPPort
+	p.Configmap.Data["USER_FIRST_NAME"] = security.User.FirstName
+	p.Configmap.Data["USER_LAST_NAME"] = security.User.LastName
+	p.Configmap.Data["USER_EMAIL"] = security.User.Email
+	p.Configmap.Data["USER_PHONE"] = security.User.Phone
+	p.Configmap.Data["USER_PASSWORD"] = security.User.Password
+	p.Configmap.Data["COMPANY_NAME"] = security.User.CompanyName
+	if db.Type == enums.MONGO || db.Type == "" {
+		p.Configmap.Data["MONGO"] = string(enums.MONGO)
+		p.Configmap.Data["MONGO_SERVER"] = db.ServerURL
+		p.Configmap.Data["MONGO_PORT"] = db.ServerPort
+	}
+	return p
+}
+
+func (p prerequisites) ApplySecurityConfigMap() error {
+	return p.Client.Create(context.Background(), &p.Configmap)
 }
 
 func (p prerequisites) ModifyTektonDescriptor(namespace string) service.Prerequisites {
@@ -42,29 +88,34 @@ func (p prerequisites) ModifySecret(namespace string, db v1alpha1.DB) service.Pr
 	return p
 }
 
-func (p prerequisites) ApplySecret(wait bool) error {
+func (p prerequisites) ApplySecret() error {
 	return p.Client.Create(context.Background(), &p.Secret)
 }
 
-func (p prerequisites) ApplyTektonDescriptor(wait bool) error {
+func (p prerequisites) ApplyTektonDescriptor() error {
 	for _, each := range p.TektonDescriptor {
 		return p.Client.Create(context.Background(), &each)
 	}
 	return nil
 }
 
-func (p prerequisites) Apply(wait bool) error {
+func (p prerequisites) Apply() error {
 	if p.Error != nil {
 		return p.Error
 	}
-	err := p.ApplyTektonDescriptor(false)
+	err := p.ApplyTektonDescriptor()
 	if err != nil {
 		log.Println("[ERROR]: Failed to create tekton", err.Error())
 		return err
 	}
-	err = p.ApplySecret(false)
+	err = p.ApplySecret()
 	if err != nil {
 		log.Println("[ERROR]: Failed to create secret ", "Secret.Namespace", p.Secret.Namespace, "Deployment.Name", p.Secret.Name, err.Error())
+		return err
+	}
+	err = p.ApplySecurityConfigMap()
+	if err != nil {
+		log.Println("[ERROR]: Failed to create security service configMap ", "Secret.Namespace", p.Secret.Namespace, "Deployment.Name", p.Secret.Name, err.Error())
 		return err
 	}
 	return nil
@@ -104,10 +155,25 @@ func getTektonDescriptorFromFile() []unstructured.Unstructured {
 	return files
 }
 
+func getConfigMapFromFile() coreV1.ConfigMap {
+	data, err := ioutil.ReadFile("security-server-configmap.yaml")
+	if err != nil {
+		panic(err.Error())
+	}
+	decode := scheme.Codecs.UniversalDeserializer().Decode
+
+	obj, _, err := decode(data, nil, nil)
+	if err != nil {
+		fmt.Printf("%#v", err)
+	}
+	return *obj.(*coreV1.ConfigMap)
+}
+
 func New(client client.Client) service.Prerequisites {
 	return prerequisites{
 		Secret:           getSecretFromFile(),
 		Client:           client,
 		TektonDescriptor: getTektonDescriptorFromFile(),
+		Configmap:        getConfigMapFromFile(),
 	}
 }

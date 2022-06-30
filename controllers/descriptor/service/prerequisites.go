@@ -5,7 +5,9 @@ import "github.com/klovercloud-ci-cd/klovercloudcd-operator/api/v1alpha1"
 type Prerequisites interface {
 	ModifySecret(namespace string, db v1alpha1.DB) Prerequisites
 	ModifyTektonDescriptor(namespace string) Prerequisites
-	ApplySecret(wait bool) error
-	ApplyTektonDescriptor(wait bool) error
-	Apply(wait bool) error
+	ModifySecurityConfigMap(namespace string, db v1alpha1.DB, security v1alpha1.Security) Prerequisites
+	ApplySecret() error
+	ApplyTektonDescriptor() error
+	ApplySecurityConfigMap() error
+	Apply() error
 }

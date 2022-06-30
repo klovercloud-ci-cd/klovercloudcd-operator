@@ -10,7 +10,6 @@ import (
 	"io/ioutil"
 	appv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/kubernetes/scheme"
 	"log"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -30,9 +29,6 @@ func (e eventBank) ModifyConfigmap(namespace string, db v1alpha1.DB) service.Eve
 	}
 	e.Configmap.ObjectMeta.Labels["app"] = "klovercloudCD"
 	e.Configmap.ObjectMeta.Namespace = namespace
-	found := &corev1.ConfigMap{}
-	_ = e.Client.Get(context.Background(), types.NamespacedName{Name: "klovercloud-security-envar-config", Namespace: namespace}, found)
-	e.Configmap.Data["PUBLIC_KEY"] = found.Data["PRIVATE_KEY"]
 	if db.Type == enums.MONGO || db.Type == "" {
 		e.Configmap.Data["MONGO"] = string(enums.MONGO)
 		e.Configmap.Data["MONGO_SERVER"] = db.ServerURL
