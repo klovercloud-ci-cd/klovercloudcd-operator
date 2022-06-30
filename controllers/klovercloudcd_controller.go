@@ -66,16 +66,12 @@ func (r *KlovercloudCDReconciler) Reconcile(ctx context.Context, req ctrl.Reques
 	}
 	// TODO(user): your logic here
 	// Apply prerequisites
-
-	// Apply security
-
-	err = descriptor.ApplySecurity(r.Client, config.Namespace, config.Spec.Database, config.Spec.Security, string(config.Spec.Version))
-
+	err = descriptor.ApplyPrerequisites(r.Client, config.Namespace, config.Spec.Database, config.Spec.Security, string(config.Spec.Version))
 	if err != nil {
 		return ctrl.Result{}, err
 	}
 
-	err = descriptor.ApplyPrerequisites(r.Client, config.Namespace, config.Spec.Database, string(config.Spec.Version))
+	err = descriptor.ApplyIntegrationManager(r.Client, config.Namespace, config.Spec.Database, config.Spec.IntegrationManager, string(config.Spec.Version))
 	if err != nil {
 		return ctrl.Result{}, err
 	}
@@ -84,8 +80,10 @@ func (r *KlovercloudCDReconciler) Reconcile(ctx context.Context, req ctrl.Reques
 	if err != nil {
 		return ctrl.Result{}, err
 	}
+	// Apply security
 
-	err = descriptor.ApplyIntegrationManager(r.Client, config.Namespace, config.Spec.Database, config.Spec.IntegrationManager, string(config.Spec.Version))
+	err = descriptor.ApplySecurity(r.Client, config.Namespace, config.Spec.Database, config.Spec.Security, string(config.Spec.Version))
+
 	if err != nil {
 		return ctrl.Result{}, err
 	}
