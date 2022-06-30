@@ -6,6 +6,7 @@ import (
 	v0_0_1_betaApiService "github.com/klovercloud-ci-cd/klovercloudcd-operator/controllers/descriptor/v0_0_1_beta/api-service"
 	v0_0_1_betaPrerequisites "github.com/klovercloud-ci-cd/klovercloudcd-operator/controllers/descriptor/v0_0_1_beta/prerequisites"
 	v0_0_1_betaSecurity "github.com/klovercloud-ci-cd/klovercloudcd-operator/controllers/descriptor/v0_0_1_beta/security"
+	v0_0_1_betaIntegrationManager "github.com/klovercloud-ci-cd/klovercloudcd-operator/controllers/descriptor/v0_0_1_beta/integration-manager"
 	"github.com/klovercloud-ci-cd/klovercloudcd-operator/enums"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -22,9 +23,16 @@ func ApplyPrerequisites(client client.Client, namespace string, db v1alpha1.DB, 
 	}
 	return errors.New("[ERROR]: Version is not valid! Failed to apply prerequisites")
 }
-func ApplyApiService(client client.Client, namespace string, db v1alpha1.DB, v1alpha1ApiService v1alpha1.ApiService, version string) error {
+func ApplyApiService(client client.Client, namespace string, v1alpha1ApiService v1alpha1.ApiService, version string) error {
 	if version == string(enums.V0_0_1_BETA) {
 		return v0_0_1_betaApiService.New(client).ModifyConfigmap(namespace).ModifyDeployment(namespace, v1alpha1ApiService).ModifyService(namespace).Apply(true)
 	}
 	return errors.New("[ERROR]: Version is not valid! Failed to apply api service")
+}
+
+func ApplyIntegrationManager(client client.Client, namespace string, db v1alpha1.DB, integrationManager v1alpha1.IntegrationManager, version string) error {
+	if version == string(enums.V0_0_1_BETA) {
+		return v0_0_1_betaIntegrationManager.New(client).ModifyConfigmap(namespace,db,integrationManager).ModifyDeployment(namespace,integrationManager).ModifyService(namespace).Apply(true)
+	}
+	return errors.New("[ERROR]: Version is not valid! Failed to apply prerequisites")
 }

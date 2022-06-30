@@ -74,14 +74,22 @@ func (r *KlovercloudCDReconciler) Reconcile(ctx context.Context, req ctrl.Reques
 	if err != nil {
 		return ctrl.Result{}, err
 	}
+
 	err = descriptor.ApplyPrerequisites(r.Client, config.Namespace, config.Spec.Database, string(config.Spec.Version))
 	if err != nil {
 		return ctrl.Result{}, err
 	}
-	err = descriptor.ApplyApiService(r.Client, config.Namespace, config.Spec.Database, config.Spec.ApiService, string(config.Spec.Version))
+
+	err = descriptor.ApplyApiService(r.Client, config.Namespace,config.Spec.ApiService, string(config.Spec.Version))
 	if err != nil {
 		return ctrl.Result{}, err
 	}
+
+	err=descriptor.ApplyIntegrationManager(r.Client,config.Namespace,config.Spec.Database,config.Spec.IntegrationManager,string(config.Spec.Version))
+	if err != nil {
+		return ctrl.Result{}, err
+	}
+
 	return ctrl.Result{}, nil
 }
 
