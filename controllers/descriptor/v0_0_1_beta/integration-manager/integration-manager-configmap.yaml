@@ -1,0 +1,21 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: klovercloud-integration-manager-envar-config
+  namespace: klovercloud
+data:
+  RUN_MODE: "PRODUCTION"
+  SERVER_PORT: "8080"
+  MONGO_SERVER: "${mongo_server}"
+  MONGO_PORT: "${mongo_port}"
+  DATABASE_NAME: "klovercloudcd-integration-manager"
+  DATABASE: "MONGO"
+  DEFAULT_PER_DAY_TOTAL_PROCESS: "10"
+  DEFAULT_NUMBER_OF_CONCURRENT_PROCESS: "10"
+  KLOVERCLOUD_CI_CORE_URL: "http://klovercloud-ci-core.klovercloud.svc.cluster.local/api/v1"
+  EVENT_STORE_URL: "http://klovercloud-ci-event-bank.klovercloud.svc.cluster.local/api/v1"
+  ENABLE_AUTHENTICATION: "false"
+  GITHUB_WEBHOOK_CONSUMING_URL: "${api_service_base_url}/api/v1/githubs"
+  BITBUCKET_WEBHOOK_CONSUMING_URL: "${api_service_base_url}/api/v1/bitbuckets"
+  PIPELINE_PURGING: "ENABLE"
+  ENVIRONMENT: "PRODUCTION"
