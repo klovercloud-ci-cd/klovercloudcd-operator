@@ -18,6 +18,7 @@ package controllers
 
 import (
 	"context"
+	"github.com/klovercloud-ci-cd/klovercloudcd-operator/controllers/descriptor"
 	"k8s.io/apimachinery/pkg/api/errors"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
@@ -64,8 +65,15 @@ func (r *KlovercloudCDReconciler) Reconcile(ctx context.Context, req ctrl.Reques
 		return reconcile.Result{}, err
 	}
 	// TODO(user): your logic here
+	// Apply prerequisites
 
+	// Apply security
 
+	err=descriptor.ApplySecurity(r.Client,config.Namespace,config.Spec.Database,config.Spec.Security, string(config.Spec.Version))
+
+	if err!=nil{
+		return ctrl.Result{}, err
+	}
 	return ctrl.Result{}, nil
 }
 

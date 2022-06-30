@@ -5,34 +5,67 @@ import (
 	"errors"
 	"fmt"
 	"github.com/klovercloud-ci-cd/klovercloudcd-operator/api/v1alpha1"
+	"github.com/klovercloud-ci-cd/klovercloudcd-operator/controllers/descriptor/service"
+	"github.com/klovercloud-ci-cd/klovercloudcd-operator/controllers/descriptor/v0_0_1_beta/utility"
+	"github.com/klovercloud-ci-cd/klovercloudcd-operator/enums"
 	"io/ioutil"
 	appv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
-	//metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	//"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/kubernetes/scheme"
 	"log"
-	//ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	//apiErrors "k8s.io/apimachinery/pkg/api/errors"
 	"time"
 )
 
-type Controller interface {
-	ModifyConfigmap(db v1alpha1.DB,security v1alpha1.Security)
-	Apply( wait bool) error
-	ApplyConfigMap() error
-	ApplyDeployment() error
-}
 
-type Security struct {
+type security struct {
 	Configmap corev1.ConfigMap
 	Deployment appv1.Deployment
 	Client client.Client
+	Error error
 }
 
-func (s Security) ModifyConfigmap(db v1alpha1.DB, security v1alpha1.Security) {
-	panic("implement me")
+func (s security) ModifyDeployment(namespace string,security v1alpha1.Security)  service.Security  {
+	if s.Deployment.ObjectMeta.Labels==nil{
+		s.Deployment.ObjectMeta.Labels=make(map[string]string)
+	}
+	s.Deployment.ObjectMeta.Labels["app"]="klovercloudCD"
+	s.Deployment.ObjectMeta.Namespace=namespace
+	for i,_:=range s.Deployment.Spec.Template.Spec.Containers{
+		s.Deployment.Spec.Template.Spec.Containers[i].Resources=security.Resources
+	}
+	return s
+}
+
+func (s security) ModifyConfigmap(namespace string,db v1alpha1.DB, security v1alpha1.Security)  service.Security  {
+	if s.Configmap.ObjectMeta.Labels==nil{
+		s.Configmap.ObjectMeta.Labels=make(map[string]string)
+	}
+	s.Configmap.ObjectMeta.Labels["app"]="klovercloudCD"
+	s.Configmap.ObjectMeta.Namespace=namespace
+	s.Configmap.Data["MAIL_SERVER_HOST_EMAIL"]=security.MailServerHostEmail
+	s.Configmap.Data["MAIL_SERVER_HOST_EMAIL_SECRET"]=security.MailServerHostEmailSecret
+	s.Configmap.Data["SMTP_HOST"]=security.SMTPHost
+	s.Configmap.Data["SMTP_PORT"]=security.SMTPPort
+	s.Configmap.Data["USER_FIRST_NAME"]=security.User.FirstName
+	s.Configmap.Data["USER_LAST_NAME"]=security.User.LastName
+	s.Configmap.Data["USER_EMAIL"]=security.User.Email
+	s.Configmap.Data["USER_PHONE"]=security.User.Phone
+	s.Configmap.Data["USER_PASSWORD"]=security.User.Password
+	s.Configmap.Data["COMPANY_NAME"]=security.User.CompanyName
+	private, public, err := utility.New().Generate()
+	if err!=nil{
+		s.Error=err
+		log.Println("[ERROR]: Failed to modify secrets configmap."+err.Error())
+	}
+	s.Configmap.Data["PRIVATE_KEY"]=string(private)
+	s.Configmap.Data["PUBLIC_KEY"]=string(public)
+	if db.Type==enums.MONGO {
+		s.Configmap.Data["MONGO"] = string(enums.MONGO)
+		s.Configmap.Data["MONGO_SERVER"] = db.ServerURL
+		s.Configmap.Data["MONGO_PORT"] = db.ServerPort
+	}
+	return s
 }
 
 func  getConfigMapFromFile() corev1.ConfigMap {
@@ -63,7 +96,10 @@ func getDeploymentFromFile() appv1.Deployment {
 	return *obj.(*appv1.Deployment)
 }
 
-func (s Security) Apply(wait bool) error {
+func (s security) Apply(wait bool) error {
+	if s.Error!=nil{
+		return s.Error
+	}
 	err:=s.ApplyConfigMap()
 	if err!=nil{
 		log.Println("[ERROR]: Failed to create configmap for security service.", "Deployment.Namespace", s.Deployment.Namespace, "Deployment.Name", s.Deployment.Name,err.Error())
@@ -99,7 +135,7 @@ func (s Security) Apply(wait bool) error {
 	return nil
 }
 
-func(s Security) WaitUntilPodsAreReady(existingPods map[string]bool,listOption []client.ListOption, namespace string,deployment string,replica int32,retryCount int) error{
+func(s security) WaitUntilPodsAreReady(existingPods map[string]bool,listOption []client.ListOption, namespace string,deployment string,replica int32,retryCount int) error{
 
 	if retryCount<=0{
 		return errors.New("[ERROR]: Failed to watch pod lifecycle event."+ "Deployment.Namespace:"+namespace+", Deployment.Name: "+deployment)
@@ -150,16 +186,16 @@ func(s Security) WaitUntilPodsAreReady(existingPods map[string]bool,listOption [
 }
 
 
-func (s Security) ApplyConfigMap() error {
+func (s security) ApplyConfigMap() error {
 	return s.Client.Create(context.Background(), &s.Configmap)
 }
 
-func (s Security) ApplyDeployment() error {
+func (s security) ApplyDeployment() error {
 	return s.Client.Create(context.Background(), &s.Deployment)
 }
 
-func New(	client client.Client) Controller {
-	return Security{
+func New(client client.Client) service.Security {
+	return security{
 		Configmap:  getConfigMapFromFile(),
 		Deployment: getDeploymentFromFile(),
 		Client: client,

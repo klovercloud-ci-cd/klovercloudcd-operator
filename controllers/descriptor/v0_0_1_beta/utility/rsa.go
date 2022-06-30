@@ -9,6 +9,7 @@ import (
 )
 
 type Generator interface {
+	Generate() (private []byte, public []byte,  error error)
 	generatePrivateKey()  (*rsa.PrivateKey, error)
 	encodePrivateKeyToPEM(privateKey *rsa.PrivateKey) []byte
 	encodePublicKeyToPEM(publickey *rsa.PublicKey) []byte
@@ -23,7 +24,7 @@ func New() Generator {
 }
 
 
-func(key Key) Generate() (private interface{}, public interface{},  error error){
+func(key Key) Generate() (private []byte, public []byte,  error error){
 	privateKey, err := key.generatePrivateKey()
 	if err != nil {
 		log.Println("Failed to generate private key: [ERROR]: "+err.Error())
