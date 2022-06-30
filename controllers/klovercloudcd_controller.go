@@ -80,12 +80,17 @@ func (r *KlovercloudCDReconciler) Reconcile(ctx context.Context, req ctrl.Reques
 		return ctrl.Result{}, err
 	}
 
-	err = descriptor.ApplyApiService(r.Client, config.Namespace,config.Spec.ApiService, string(config.Spec.Version))
+	err = descriptor.ApplyApiService(r.Client, config.Namespace, config.Spec.ApiService, string(config.Spec.Version))
 	if err != nil {
 		return ctrl.Result{}, err
 	}
 
-	err=descriptor.ApplyIntegrationManager(r.Client,config.Namespace,config.Spec.Database,config.Spec.IntegrationManager,string(config.Spec.Version))
+	err = descriptor.ApplyIntegrationManager(r.Client, config.Namespace, config.Spec.Database, config.Spec.IntegrationManager, string(config.Spec.Version))
+	if err != nil {
+		return ctrl.Result{}, err
+	}
+
+	err = descriptor.ApplyEventBank(r.Client, config.Namespace, config.Spec.Database, config.Spec.EventBank, string(config.Spec.Version))
 	if err != nil {
 		return ctrl.Result{}, err
 	}
