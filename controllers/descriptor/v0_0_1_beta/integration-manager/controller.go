@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/klovercloud-ci-cd/klovercloudcd-operator/api/v1alpha1"
 	"github.com/klovercloud-ci-cd/klovercloudcd-operator/controllers/descriptor/service"
+	"github.com/klovercloud-ci-cd/klovercloudcd-operator/controllers/descriptor/v0_0_1_beta/utility"
 	"github.com/klovercloud-ci-cd/klovercloudcd-operator/enums"
 	"io/ioutil"
 	appv1 "k8s.io/api/apps/v1"
@@ -108,9 +109,11 @@ func (i integrationManager) Apply(wait bool) error {
 	}
 
 	if wait{
-
+		err=utility.WaitUntilPodsAreReady(i.Client,existingPodMap,listOpts,i.Deployment.Namespace,i.Deployment.Name,*i.Deployment.Spec.Replicas,10)
+		if err!=nil{
+			return err
+		}
 	}
-
 	err=i.ApplyService()
 	if err!=nil{
 		log.Println("[ERROR]: Failed to apply service for security service.","Deployment.Namespace: ", i.Deployment.Namespace, " Deployment.Name: ", i.Deployment.Name+". ",err.Error())

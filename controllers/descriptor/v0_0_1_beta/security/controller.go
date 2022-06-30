@@ -158,7 +158,7 @@ func (s security) Apply(wait bool) error {
 		return err
 	}
 	if wait{
-		err=s.WaitUntilPodsAreReady(existingPodMap,listOpts,s.Deployment.Namespace,s.Deployment.Name,*s.Deployment.Spec.Replicas,10)
+		err=utility.WaitUntilPodsAreReady(s.Client,existingPodMap,listOpts,s.Deployment.Namespace,s.Deployment.Name,*s.Deployment.Spec.Replicas,10)
 		if err!=nil{
 			return err
 		}
