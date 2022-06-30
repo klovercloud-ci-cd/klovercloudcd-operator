@@ -100,6 +100,22 @@ type EventBank struct {
 
 // IntegrationManager defines the config of IntegrationManager service
 type IntegrationManager struct {
+
+	// PerDayTotalProcess defines allowed per day total process
+	PerDayTotalProcess string `json:"per_day_total_process"` //default 30
+
+	// ConcurrentProcess defines concurrent total process
+	ConcurrentProcess string `json:"concurrent_process"` //default 10
+
+	// GithubWebhookConsumingUrl defines GitHub webhook consuming url
+	GithubWebhookConsumingUrl string `json:"github_webhook_consuming_url"`
+
+	// BitbucketWebhookConsumingUrl defines Bitbucket webhook consuming url
+	BitbucketWebhookConsumingUrl string `json:"bitbucket_webhook_consuming_url"`
+
+	// PipelinePurging defines if all objects will be purged after process finished
+	PipelinePurging string `json:"pipeline_purging"` // default ENABLE
+
 	// Resources defines cpu, memory requests and limits
 	Resources corev1.ResourceRequirements `json:"resources,omitempty" protobuf:"bytes,8,opt,name=resources"`
 }
