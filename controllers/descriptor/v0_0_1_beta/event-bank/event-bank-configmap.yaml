@@ -1,0 +1,21 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: klovercloud-ci-event-bank-envar-config
+  namespace: klovercloud
+data:
+  RUN_MODE: "PRODUCTION"
+  SERVER_PORT: "8080"
+  MONGO_SERVER: "${mongo_server}"
+  MONGO_PORT: "${mongo_port}"
+  DATABASE_NAME: "klovercloudcd-eventBank"
+  DATABASE: "MONGO"
+  KLOVERCLOUD_CI_CORE_URL: "http://klovercloud-ci-core.klovercloud.svc.cluster.local/api/v1"
+  PUBLIC_KEY: ""
+  ENABLE_AUTHENTICATION: "false"
+  JAEGER_AGENT_HOST: "localhost"
+  JAEGER_SAMPLER_TYPE: "const"
+  JAEGER_SAMPLER_PARAM: "1"
+  JAEGER_REPORTER_LOG_SPANS: "true"
+  JAEGER_SERVICE_NAME: "event-bank"
+  ENABLE_OPENTRACING: "false"

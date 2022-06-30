@@ -136,7 +136,7 @@ func getConfigMapFromFile() corev1.ConfigMap {
 }
 
 func getServiceFromFile() corev1.Service {
-	data, err := ioutil.ReadFile("api-service-deployment.yaml")
+	data, err := ioutil.ReadFile("api-service-service.yaml")
 	if err != nil {
 		panic(err.Error())
 	}
@@ -150,7 +150,7 @@ func getServiceFromFile() corev1.Service {
 }
 
 func getDeploymentFromFile() appv1.Deployment {
-	data, err := ioutil.ReadFile("api-service-service.yaml")
+	data, err := ioutil.ReadFile("api-service-deployment.yaml")
 	if err != nil {
 		panic(err.Error())
 	}
