@@ -10,7 +10,7 @@ data:
   MONGO_PORT: "${mongo_port}"
   DATABASE_NAME: "klovercloudcd-integration-manager"
   DATABASE: "MONGO"
-  DEFAULT_PER_DAY_TOTAL_PROCESS: "10"
+  DEFAULT_PER_DAY_TOTAL_PROCESS: "30"
   DEFAULT_NUMBER_OF_CONCURRENT_PROCESS: "10"
   KLOVERCLOUD_CI_CORE_URL: "http://klovercloud-ci-core.klovercloud.svc.cluster.local/api/v1"
   EVENT_STORE_URL: "http://klovercloud-ci-event-bank.klovercloud.svc.cluster.local/api/v1"

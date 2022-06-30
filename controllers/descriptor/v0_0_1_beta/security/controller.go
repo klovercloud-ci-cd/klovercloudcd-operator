@@ -74,7 +74,7 @@ func (s security) ModifyConfigmap(namespace string,db v1alpha1.DB, security v1al
 	}
 	s.Configmap.Data["PRIVATE_KEY"]=string(private)
 	s.Configmap.Data["PUBLIC_KEY"]=string(public)
-	if db.Type==enums.MONGO {
+	if db.Type==enums.MONGO  || db.Type==""{
 		s.Configmap.Data["MONGO"] = string(enums.MONGO)
 		s.Configmap.Data["MONGO_SERVER"] = db.ServerURL
 		s.Configmap.Data["MONGO_PORT"] = db.ServerPort
