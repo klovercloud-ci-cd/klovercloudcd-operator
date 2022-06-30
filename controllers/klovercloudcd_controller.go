@@ -61,7 +61,7 @@ func (r *KlovercloudCDReconciler) Reconcile(ctx context.Context, req ctrl.Reques
 			return reconcile.Result{}, nil
 		}
 		// Error reading the object - requeue the request.
-		log.Error(err," Error reading the object - requeue the request")
+		log.Error(err, " Error reading the object - requeue the request")
 		return reconcile.Result{}, err
 	}
 	// TODO(user): your logic here
@@ -69,9 +69,13 @@ func (r *KlovercloudCDReconciler) Reconcile(ctx context.Context, req ctrl.Reques
 
 	// Apply security
 
-	err=descriptor.ApplySecurity(r.Client,config.Namespace,config.Spec.Database,config.Spec.Security, string(config.Spec.Version))
+	err = descriptor.ApplySecurity(r.Client, config.Namespace, config.Spec.Database, config.Spec.Security, string(config.Spec.Version))
 
-	if err!=nil{
+	if err != nil {
+		return ctrl.Result{}, err
+	}
+	err = descriptor.ApplyPrerequisites(r.Client, config.Namespace, config.Spec.Database, string(config.Spec.Version))
+	if err != nil {
 		return ctrl.Result{}, err
 	}
 	return ctrl.Result{}, nil
