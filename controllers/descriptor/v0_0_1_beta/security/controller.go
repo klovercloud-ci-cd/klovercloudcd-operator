@@ -21,8 +21,13 @@ import (
 type security struct {
 	Configmap corev1.ConfigMap
 	Deployment appv1.Deployment
+	Service corev1.Service
 	Client client.Client
 	Error error
+}
+
+func (s security) ApplyService() error {
+	return s.Client.Create(context.Background(), &s.Service)
 }
 
 func (s security) ModifyDeployment(namespace string,security v1alpha1.Security)  service.Security  {
@@ -82,6 +87,21 @@ func  getConfigMapFromFile() corev1.ConfigMap {
 	return *obj.(*corev1.ConfigMap)
 }
 
+func  getServiceFromFile() corev1.Service {
+	data, err := ioutil.ReadFile("security-server-service.yaml")
+	if err!=nil{
+		panic(err.Error())
+	}
+	decode := scheme.Codecs.UniversalDeserializer().Decode
+
+	obj, _, err := decode(data, nil, nil)
+	if err != nil {
+		fmt.Printf("%#v", err)
+	}
+	return *obj.(*corev1.Service)
+}
+
+
 func getDeploymentFromFile() appv1.Deployment {
 	data, err := ioutil.ReadFile("security-server-deployment.yaml")
 	if err!=nil{
@@ -129,7 +149,15 @@ func (s security) Apply(wait bool) error {
 		return err
 	}
 	if wait{
-		s.WaitUntilPodsAreReady(existingPodMap,listOpts,s.Deployment.Namespace,s.Deployment.Name,*s.Deployment.Spec.Replicas,10)
+		err=s.WaitUntilPodsAreReady(existingPodMap,listOpts,s.Deployment.Namespace,s.Deployment.Name,*s.Deployment.Spec.Replicas,10)
+		if err!=nil{
+			return err
+		}
+	}
+	err=s.ApplyService()
+	if err!=nil{
+		log.Println("[ERROR]: Failed to apply service for security service.","Deployment.Namespace: ", s.Deployment.Namespace, " Deployment.Name: ", s.Deployment.Name+". ",err.Error())
+		return err
 	}
 
 	return nil
@@ -198,6 +226,7 @@ func New(client client.Client) service.Security {
 	return security{
 		Configmap:  getConfigMapFromFile(),
 		Deployment: getDeploymentFromFile(),
+		Service: getServiceFromFile(),
 		Client: client,
 	}
 }

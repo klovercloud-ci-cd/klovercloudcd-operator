@@ -8,4 +8,5 @@ type Security interface {
 	Apply( wait bool) error
 	ApplyConfigMap() error
 	ApplyDeployment() error
+	ApplyService() error
 }
