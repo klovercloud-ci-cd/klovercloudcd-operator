@@ -10,7 +10,7 @@ import (
 
 func ApplySecurity(client client.Client,namespace string,db v1alpha1.DB, v1alpha1Security v1alpha1.Security, version string) error{
 	if version==string(enums.V0_0_1_BETA){
-		return v0_0_1_betaSecurity.New(client).ModifyConfigmap(namespace,db,v1alpha1Security).ModifyDeployment(namespace,v1alpha1Security).Apply(true)
+		return v0_0_1_betaSecurity.New(client).ModifyConfigmap(namespace,db,v1alpha1Security).ModifyDeployment(namespace,v1alpha1Security).ModifyService(namespace).Apply(true)
 	}
 	return errors.New("[ERROR]: Version is not valid! Failed to apply security service")
 }
