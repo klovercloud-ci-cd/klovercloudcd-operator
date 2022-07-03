@@ -57,7 +57,7 @@ func ApplyAgent(client client.Client, restConfig *rest.Config, namespace string,
 
 func ApplyCoreEngine(client client.Client, namespace string, db v1alpha1.DB, coreEngine v1alpha1.CoreEngine, version string) error {
 	if version == string(enums.V0_0_1_BETA) {
-		return v0_0_1_betaCoreEngine.New(client).ModifyConfigmap(namespace, db).ModifyDeployment(namespace, coreEngine).ModifyService(namespace).ModifyClusterRole(namespace).ModifyClusterRoleBinding(namespace).ModifyServiceAccount(namespace).Apply(true)
+		return v0_0_1_betaCoreEngine.New(client).ModifyConfigmap(namespace, db).ModifyDeployment(namespace, coreEngine).ModifyService(namespace).ModifyClusterRole(namespace).ModifyClusterRoleBinding(namespace).ModifyServiceAccount(namespace).Apply(false)
 	}
 	return errors.New("[ERROR]: Version is not valid! Failed to apply core engine")
 }
