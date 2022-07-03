@@ -3,12 +3,14 @@ package descriptor
 import (
 	"errors"
 	"github.com/klovercloud-ci-cd/klovercloudcd-operator/api/v1alpha1"
+	v0_0_1_betaAgent "github.com/klovercloud-ci-cd/klovercloudcd-operator/controllers/descriptor/v0_0_1_beta/agent"
 	v0_0_1_betaApiService "github.com/klovercloud-ci-cd/klovercloudcd-operator/controllers/descriptor/v0_0_1_beta/api-service"
 	v0_0_1_betaEventBank "github.com/klovercloud-ci-cd/klovercloudcd-operator/controllers/descriptor/v0_0_1_beta/event-bank"
 	v0_0_1_betaIntegrationManager "github.com/klovercloud-ci-cd/klovercloudcd-operator/controllers/descriptor/v0_0_1_beta/integration-manager"
 	v0_0_1_betaPrerequisites "github.com/klovercloud-ci-cd/klovercloudcd-operator/controllers/descriptor/v0_0_1_beta/prerequisites"
 	v0_0_1_betaSecurity "github.com/klovercloud-ci-cd/klovercloudcd-operator/controllers/descriptor/v0_0_1_beta/security"
 	"github.com/klovercloud-ci-cd/klovercloudcd-operator/enums"
+	"k8s.io/client-go/rest"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -43,4 +45,11 @@ func ApplyEventBank(client client.Client, namespace string, db v1alpha1.DB, even
 		return v0_0_1_betaEventBank.New(client).ModifyConfigmap(namespace, db).ModifyDeployment(namespace, eventBank).ModifyService(namespace).Apply(true)
 	}
 	return errors.New("[ERROR]: Version is not valid! Failed to apply event bank")
+}
+
+func ApplyAgent(client client.Client, restConfig *rest.Config, namespace string,agent v1alpha1.Agent, version string) error {
+	if version == string(enums.V0_0_1_BETA) {
+		return v0_0_1_betaAgent.New(client,restConfig).ModifyClusterRole().ModifyServiceAccount(namespace,agent).ModifyClusterRoleBinding(namespace,agent).ModifyConfigmap(namespace, agent).ModifyDeployment(namespace, agent).ModifyService(namespace).Apply(true)
+	}
+	return errors.New("[ERROR]: Version is not valid! Failed to apply agent")
 }

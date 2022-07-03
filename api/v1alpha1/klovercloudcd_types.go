@@ -123,6 +123,22 @@ type IntegrationManager struct {
 
 // Agent defines the config of Agent service
 type Agent struct {
+
+	// PullSize defines how many jobs it will pull every period. It should depend on consumed resources
+    PullSize string `json:"pull_size,omitempty"`
+
+	// Token defines token to communicate with api service. Generate this by doing exec inside api service, then run kcpctl generate-jwt client={your agent name}
+	Token string `json:"token,omitempty"`
+
+	// LightHouseEnabled defines if Light House is enabled or not. By default, it is false.
+	LightHouseEnabled string `json:"light_house_enabled,omitempty"`
+
+	// TerminalBaseUrl defines base url of terminal. LightHouseEnabled should be true for this feature.
+	TerminalBaseUrl string `json:"terminal_base_url,omitempty"`
+
+	// TerminalApiVersion defines the api version of terminal. By default, it is api/v1
+	TerminalApiVersion string `json:"terminal_api_version,omitempty"`
+
 	// Resources defines cpu, memory requests and limits
 	Resources corev1.ResourceRequirements `json:"resources,omitempty" protobuf:"bytes,8,opt,name=resources"`
 }
