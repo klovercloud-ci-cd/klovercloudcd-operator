@@ -16,4 +16,13 @@ resources:
   kind: KlovercloudCD
   path: github.com/klovercloud-ci-cd/klovercloudcd-operator/api/v1alpha1
   version: v1alpha1
+- api:
+    crdVersion: v1
+    namespaced: true
+  controller: true
+  domain: cd.klovercloud.com
+  group: base
+  kind: ExternalAgent
+  path: github.com/klovercloud-ci-cd/klovercloudcd-operator/api/v1alpha1
+  version: v1alpha1
 version: "3"

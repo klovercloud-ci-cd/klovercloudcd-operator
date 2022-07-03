@@ -1,4 +1,5 @@
 ## Append samples you want in your CSV to this file as resources ##
 resources:
 - base_v1alpha1_klovercloudcd.yaml
+- base_v1alpha1_externalagent.yaml
 #+kubebuilder:scaffold:manifestskustomizesamples

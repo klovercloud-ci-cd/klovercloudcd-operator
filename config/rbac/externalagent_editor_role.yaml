@@ -1,0 +1,24 @@
+# permissions for end users to edit externalagents.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: externalagent-editor-role
+rules:
+- apiGroups:
+  - base.cd.klovercloud.com
+  resources:
+  - externalagents
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - base.cd.klovercloud.com
+  resources:
+  - externalagents/status
+  verbs:
+  - get

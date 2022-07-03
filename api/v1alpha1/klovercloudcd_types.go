@@ -139,6 +139,9 @@ type Agent struct {
 	// TerminalApiVersion defines the api version of terminal. By default, it is api/v1
 	TerminalApiVersion string `json:"terminal_api_version,omitempty"`
 
+	// EventStoreUrl defines the event bank url. For external agent, it should be api service base url with api version
+	EventStoreUrl string `json:"event_store_url,omitempty"`
+
 	// Resources defines cpu, memory requests and limits
 	Resources corev1.ResourceRequirements `json:"resources,omitempty" protobuf:"bytes,8,opt,name=resources"`
 }
