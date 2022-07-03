@@ -9,6 +9,7 @@ import (
 	v0_0_1_betaEventBank "github.com/klovercloud-ci-cd/klovercloudcd-operator/controllers/descriptor/v0_0_1_beta/event-bank"
 	v0_0_1_betaIntegrationManager "github.com/klovercloud-ci-cd/klovercloudcd-operator/controllers/descriptor/v0_0_1_beta/integration-manager"
 	v0_0_1_betaLighthouseQuery "github.com/klovercloud-ci-cd/klovercloudcd-operator/controllers/descriptor/v0_0_1_beta/light-house-query"
+	v0_0_1_betaLightHouseCommand "github.com/klovercloud-ci-cd/klovercloudcd-operator/controllers/descriptor/v0_0_1_beta/lighthouse-command"
 	v0_0_1_betaPrerequisites "github.com/klovercloud-ci-cd/klovercloudcd-operator/controllers/descriptor/v0_0_1_beta/prerequisites"
 	v0_0_1_betaSecurity "github.com/klovercloud-ci-cd/klovercloudcd-operator/controllers/descriptor/v0_0_1_beta/security"
 	"github.com/klovercloud-ci-cd/klovercloudcd-operator/enums"
@@ -49,9 +50,9 @@ func ApplyEventBank(client client.Client, namespace string, db v1alpha1.DB, even
 	return errors.New("[ERROR]: Version is not valid! Failed to apply event bank")
 }
 
-func ApplyAgent(client client.Client, restConfig *rest.Config, namespace string,agent v1alpha1.Agent, version string) error {
+func ApplyAgent(client client.Client, restConfig *rest.Config, namespace string, agent v1alpha1.Agent, version string) error {
 	if version == string(enums.V0_0_1_BETA) {
-		return v0_0_1_betaAgent.New(client,restConfig).ModifyClusterRole().ModifyServiceAccount(namespace,agent).ModifyClusterRoleBinding(namespace,agent).ModifyConfigmap(namespace, agent).ModifyDeployment(namespace, agent).ModifyService(namespace).Apply(true)
+		return v0_0_1_betaAgent.New(client, restConfig).ModifyClusterRole().ModifyServiceAccount(namespace, agent).ModifyClusterRoleBinding(namespace, agent).ModifyConfigmap(namespace, agent).ModifyDeployment(namespace, agent).ModifyService(namespace).Apply(true)
 	}
 	return errors.New("[ERROR]: Version is not valid! Failed to apply agent")
 }
@@ -70,3 +71,9 @@ func ApplyLightHouseQuery(client client.Client, namespace string, db v1alpha1.DB
 	return errors.New("[ERROR]: Version is not valid! Failed to apply light house query")
 }
 
+func ApplyLightHouseCommand(client client.Client, namespace string, db v1alpha1.DB, lightHouseCommand v1alpha1.LightHouseCommand, version string) error {
+	if version == string(enums.V0_0_1_BETA) {
+		return v0_0_1_betaLightHouseCommand.New(client).ModifyConfigmap(namespace, db).ModifyDeployment(namespace, lightHouseCommand).ModifyService(namespace).Apply(true)
+	}
+	return errors.New("[ERROR]: Version is not valid! Failed to apply lighthouse command")
+}
