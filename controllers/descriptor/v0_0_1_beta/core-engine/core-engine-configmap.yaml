@@ -1,0 +1,21 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: klovercloud-ci-core-envar-config
+  namespace: klovercloud
+data:
+  IS_K8: "True"
+  RUN_MODE: "PRODUCTION"
+  SERVER_PORT: "8080"
+  MONGO_SERVER: "${mongo_server}"
+  MONGO_PORT: "${mongo_port}"
+  DATABASE_NAME: "klovercloudcd-coreEngine"
+  DATABASE: "MONGO"
+  KLOVERCLOUD_KANIKO: "gcr.io/kaniko-project/executor:v0.14.0"
+  EVENT_STORE_URL: "http://klovercloud-ci-event-bank.klovercloud.svc.cluster.local/api/v1"
+  USE_LOCAL_EVENT_STORE: "false"
+  ALLOWED_CONCURRENT_BUILD: "4"
+  ENABLE_AUTHENTICATION: "false"
+  NON_PURGE_ABLE_TASKS: ""
+  NON_PURGE_ABLE_TASK_RUNS: ""
+  NON_PURGE_ABLE_PIPELINE_RESOURCES: ""

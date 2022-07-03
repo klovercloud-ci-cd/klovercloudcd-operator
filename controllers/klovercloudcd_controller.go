@@ -68,35 +68,32 @@ func (r *KlovercloudCDReconciler) Reconcile(ctx context.Context, req ctrl.Reques
 	}
 	// TODO(user): your logic here
 	// Apply prerequisites
-
-	// Apply security
-
-	err = descriptor.ApplySecurity(r.Client, config.Namespace, config.Spec.Database, config.Spec.Security, string(config.Spec.Version))
-
+	err = descriptor.ApplyPrerequisites(r.Client, config.Namespace, config.Spec.Database, config.Spec.Security, string(config.Spec.Version))
 	if err != nil {
 		return ctrl.Result{}, err
 	}
-
-	err = descriptor.ApplyPrerequisites(r.Client, config.Namespace, config.Spec.Database, string(config.Spec.Version))
-	if err != nil {
-		return ctrl.Result{}, err
-	}
-
-	err = descriptor.ApplyApiService(r.Client, config.Namespace, config.Spec.ApiService, string(config.Spec.Version))
-	if err != nil {
-		return ctrl.Result{}, err
-	}
-
+	// Apply integration manager
 	err = descriptor.ApplyIntegrationManager(r.Client, config.Namespace, config.Spec.Database, config.Spec.IntegrationManager, string(config.Spec.Version))
 	if err != nil {
 		return ctrl.Result{}, err
 	}
-
+	// Apply api service
+	err = descriptor.ApplyApiService(r.Client, config.Namespace, config.Spec.ApiService, string(config.Spec.Version))
+	if err != nil {
+		return ctrl.Result{}, err
+	}
+	// Apply security
+	err = descriptor.ApplySecurity(r.Client, config.Namespace, config.Spec.Database, config.Spec.Security, string(config.Spec.Version))
+	if err != nil {
+		return ctrl.Result{}, err
+	}
+	// Apply event bank
 	err = descriptor.ApplyEventBank(r.Client, config.Namespace, config.Spec.Database, config.Spec.EventBank, string(config.Spec.Version))
 	if err != nil {
 		return ctrl.Result{}, err
 	}
-
+	// Apply core engine
+	err = descriptor.ApplyCoreEngine(r.Client, config.Namespace, config.Spec.Database, config.Spec.CoreEngine, string(config.Spec.Version))
 	return ctrl.Result{}, nil
 }
 

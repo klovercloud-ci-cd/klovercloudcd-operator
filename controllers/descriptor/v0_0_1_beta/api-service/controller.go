@@ -24,22 +24,28 @@ type apiService struct {
 }
 
 func (a apiService) ModifyConfigmap(namespace string) service.ApiService {
+	found := &corev1.ConfigMap{}
+	_ = a.Client.Get(context.Background(), types.NamespacedName{Name: "klovercloud-api-service-envar-config", Namespace: namespace}, found)
+	if found.Name != "" {
+		a.Configmap.Data["PRIVATE_KEY_INTERNAL_CALL"] = found.Data["PRIVATE_KEY_INTERNAL_CALL"]
+		a.Configmap.Data["PUBLIC_KEY_INTERNAL_CALL"] = found.Data["PUBLIC_KEY_INTERNAL_CALL"]
+	} else {
+		private, public, err := utility.New().Generate()
+		if err != nil {
+			a.Error = err
+			log.Println("[ERROR]: Failed to modify secrets configmap." + err.Error())
+		}
+		a.Configmap.Data["PRIVATE_KEY_INTERNAL_CALL"] = string(private)
+		a.Configmap.Data["PUBLIC_KEY_INTERNAL_CALL"] = string(public)
+	}
 	if a.Configmap.ObjectMeta.Labels == nil {
 		a.Configmap.ObjectMeta.Labels = make(map[string]string)
 	}
 	a.Configmap.ObjectMeta.Labels["app"] = "klovercloudCD"
 	a.Configmap.ObjectMeta.Namespace = namespace
-	private, public, err := utility.New().Generate()
-	if err != nil {
-		a.Error = err
-		log.Println("[ERROR]: Failed to modify secrets configmap." + err.Error())
-	}
-	a.Configmap.Data["PRIVATE_KEY_INTERNAL_CALL"] = string(private)
-	a.Configmap.Data["PUBLIC_KEY_INTERNAL_CALL"] = string(public)
-	found := &corev1.ConfigMap{}
-	err = a.Client.Get(context.Background(), types.NamespacedName{Name: "klovercloud-security-envar-config", Namespace: namespace}, found)
+	found = &corev1.ConfigMap{}
+	_ = a.Client.Get(context.Background(), types.NamespacedName{Name: "klovercloud-security-envar-config", Namespace: namespace}, found)
 	a.Configmap.Data["PUBLIC_KEY"] = found.Data["PRIVATE_KEY"]
-
 	return a
 }
 
