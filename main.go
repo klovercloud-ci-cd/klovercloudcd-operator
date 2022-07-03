@@ -92,6 +92,7 @@ func main() {
 	if err = (&controllers.KlovercloudCDReconciler{
 		Client: mgr.GetClient(),
 		Scheme: mgr.GetScheme(),
+		Config: mgr.GetConfig(),
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "KlovercloudCD")
 		os.Exit(1)

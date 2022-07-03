@@ -20,6 +20,7 @@ import (
 	"context"
 	"github.com/klovercloud-ci-cd/klovercloudcd-operator/controllers/descriptor"
 	"k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/client-go/rest"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
 	"k8s.io/apimachinery/pkg/runtime"
@@ -33,6 +34,7 @@ import (
 // KlovercloudCDReconciler reconciles a KlovercloudCD object
 type KlovercloudCDReconciler struct {
 	client.Client
+	*rest.Config
 	Scheme *runtime.Scheme
 }
 

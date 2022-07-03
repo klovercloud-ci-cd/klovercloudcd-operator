@@ -24,6 +24,7 @@ type integrationManager struct {
 }
 
 func (i integrationManager) ModifyConfigmap(namespace string, db v1alpha1.DB, integrationManager v1alpha1.IntegrationManager) service.IntegrationManager {
+	
 	if i.Configmap.ObjectMeta.Labels==nil{
 		i.Configmap.ObjectMeta.Labels=make(map[string]string)
 	}
@@ -50,7 +51,6 @@ func (i integrationManager) ModifyConfigmap(namespace string, db v1alpha1.DB, in
 	if integrationManager.PipelinePurging=="DISABLE"{
 		i.Configmap.Data["PIPELINE_PURGING"]="DISABLE"
 	}
-
 	return i
 }
 
@@ -60,8 +60,10 @@ func (i integrationManager) ModifyDeployment(namespace string, integrationManage
 	}
 	i.Deployment.ObjectMeta.Labels["app"]="klovercloudCD"
 	i.Deployment.ObjectMeta.Namespace=namespace
-	for index,_:=range i.Deployment.Spec.Template.Spec.Containers{
-		i.Deployment.Spec.Template.Spec.Containers[index].Resources=integrationManager.Resources
+	if integrationManager.Resources.Requests.Cpu()!=nil || integrationManager.Resources.Limits.Cpu()!=nil {
+		for index, _ := range i.Deployment.Spec.Template.Spec.Containers {
+			i.Deployment.Spec.Template.Spec.Containers[index].Resources = integrationManager.Resources
+		}
 	}
 	return i
 }
@@ -92,7 +94,7 @@ func (i integrationManager) Apply(wait bool) error {
 	}
 
 	if err = i.Client.List(context.Background(), existingPodListObject, listOpts...); err != nil {
-		log.Println(err, "[ERROR]: Failed to list pods", "Deployment.Namespace", i.Deployment.Namespace, "Deployment.Name", i.Deployment.Name)
+		log.Println(err, "[ERROR]: Failed to list pods", "Deployment.Namespace", i.Deployment.Namespace, " Deployment.Name", i.Deployment.Name)
 	}
 
 	existingPodMap:=make(map[string]bool)
