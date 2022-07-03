@@ -7,6 +7,7 @@ import (
 	v0_0_1_betaCoreEngine "github.com/klovercloud-ci-cd/klovercloudcd-operator/controllers/descriptor/v0_0_1_beta/core-engine"
 	v0_0_1_betaEventBank "github.com/klovercloud-ci-cd/klovercloudcd-operator/controllers/descriptor/v0_0_1_beta/event-bank"
 	v0_0_1_betaIntegrationManager "github.com/klovercloud-ci-cd/klovercloudcd-operator/controllers/descriptor/v0_0_1_beta/integration-manager"
+	v0_0_1_betaLighthouseQuery "github.com/klovercloud-ci-cd/klovercloudcd-operator/controllers/descriptor/v0_0_1_beta/light-house-query"
 	v0_0_1_betaPrerequisites "github.com/klovercloud-ci-cd/klovercloudcd-operator/controllers/descriptor/v0_0_1_beta/prerequisites"
 	v0_0_1_betaSecurity "github.com/klovercloud-ci-cd/klovercloudcd-operator/controllers/descriptor/v0_0_1_beta/security"
 	"github.com/klovercloud-ci-cd/klovercloudcd-operator/enums"
@@ -51,4 +52,11 @@ func ApplyCoreEngine(client client.Client, namespace string, db v1alpha1.DB, cor
 		return v0_0_1_betaCoreEngine.New(client).ModifyConfigmap(namespace, db).ModifyDeployment(namespace, coreEngine).ModifyService(namespace).ModifyClusterRole(namespace).ModifyClusterRoleBinding(namespace).ModifyServiceAccount(namespace).Apply(true)
 	}
 	return errors.New("[ERROR]: Version is not valid! Failed to apply core engine")
+}
+
+func ApplyLightHouseQuery(client client.Client, namespace string, db v1alpha1.DB, lighthouseQuery v1alpha1.LightHouseQuery, version string) error {
+	if version == string(enums.V0_0_1_BETA) {
+		return v0_0_1_betaLighthouseQuery.New(client).ModifyConfigmap(namespace, db).ModifyDeployment(namespace, lighthouseQuery).ModifyService(namespace).Apply(true)
+	}
+	return errors.New("[ERROR]: Version is not valid! Failed to apply light house query")
 }
