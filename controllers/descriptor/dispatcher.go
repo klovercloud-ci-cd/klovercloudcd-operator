@@ -70,4 +70,3 @@ func ApplyLightHouseQuery(client client.Client, namespace string, db v1alpha1.DB
 	return errors.New("[ERROR]: Version is not valid! Failed to apply light house query")
 }
 
-}
