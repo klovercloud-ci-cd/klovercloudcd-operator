@@ -12,6 +12,7 @@ import (
 	v0_0_1_betaLightHouseCommand "github.com/klovercloud-ci-cd/klovercloudcd-operator/controllers/descriptor/v0_0_1_beta/lighthouse-command"
 	v0_0_1_betaPrerequisites "github.com/klovercloud-ci-cd/klovercloudcd-operator/controllers/descriptor/v0_0_1_beta/prerequisites"
 	v0_0_1_betaSecurity "github.com/klovercloud-ci-cd/klovercloudcd-operator/controllers/descriptor/v0_0_1_beta/security"
+	v0_0_1_betaExternalAgent "github.com/klovercloud-ci-cd/klovercloudcd-operator/controllers/descriptor/v0_0_1_beta/external-agent"
 	"github.com/klovercloud-ci-cd/klovercloudcd-operator/enums"
 	"k8s.io/client-go/rest"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -69,6 +70,13 @@ func ApplyLightHouseQuery(client client.Client, namespace string, db v1alpha1.DB
 		return v0_0_1_betaLighthouseQuery.New(client).ModifyConfigmap(namespace, db).ModifyDeployment(namespace, lighthouseQuery).ModifyService(namespace).Apply(true)
 	}
 	return errors.New("[ERROR]: Version is not valid! Failed to apply light house query")
+}
+
+func ApplyExternalAgent(client client.Client, restConfig *rest.Config, namespace string,agent v1alpha1.Agent, version string) error {
+	if version == string(enums.V0_0_1_BETA) {
+		return v0_0_1_betaExternalAgent.New(client,restConfig).ModifyClusterRole().ModifyServiceAccount(namespace,agent).ModifyClusterRoleBinding(namespace,agent).ModifyConfigmap(namespace, agent).ModifyDeployment(namespace, agent).ModifyService(namespace).Apply(true)
+	}
+	return errors.New("[ERROR]: Version is not valid! Failed to apply agent")
 }
 
 func ApplyLightHouseCommand(client client.Client, namespace string, db v1alpha1.DB, lightHouseCommand v1alpha1.LightHouseCommand, version string) error {

@@ -8,6 +8,32 @@ rules:
 - apiGroups:
   - base.cd.klovercloud.com
   resources:
+  - externalagents
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - base.cd.klovercloud.com
+  resources:
+  - externalagents/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - base.cd.klovercloud.com
+  resources:
+  - externalagents/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - base.cd.klovercloud.com
+  resources:
   - klovercloudcds
   verbs:
   - create
