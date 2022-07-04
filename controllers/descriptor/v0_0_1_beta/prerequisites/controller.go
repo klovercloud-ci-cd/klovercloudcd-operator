@@ -62,6 +62,15 @@ func (p prerequisites) ModifySecurityConfigMap(namespace string, db v1alpha1.DB,
 		p.Configmap.Data["MONGO_SERVER"] = db.ServerURL
 		p.Configmap.Data["MONGO_PORT"] = db.ServerPort
 	}
+
+	API_SERVER_URL := p.Configmap.Data["API_SERVER_URL"]
+	replacedUrl := strings.ReplaceAll(API_SERVER_URL, ".klovercloud.", "."+namespace+".")
+	p.Configmap.Data["API_SERVER_URL"] = replacedUrl
+
+	INTEGRATION_MANAGER_URL := p.Configmap.Data["INTEGRATION_MANAGER_URL"]
+	replacedUrl = strings.ReplaceAll(INTEGRATION_MANAGER_URL, ".klovercloud.", "."+namespace+".")
+	p.Configmap.Data["INTEGRATION_MANAGER_URL"] = replacedUrl
+
 	return p
 }
 

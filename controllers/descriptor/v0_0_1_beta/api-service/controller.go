@@ -13,6 +13,7 @@ import (
 	"k8s.io/client-go/kubernetes/scheme"
 	"log"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"strings"
 )
 
 type apiService struct {
@@ -46,6 +47,27 @@ func (a apiService) ModifyConfigmap(namespace string) service.ApiService {
 	found = &corev1.ConfigMap{}
 	_ = a.Client.Get(context.Background(), types.NamespacedName{Name: "klovercloud-security-envar-config", Namespace: namespace}, found)
 	a.Configmap.Data["PUBLIC_KEY"] = found.Data["PRIVATE_KEY"]
+
+	integrationManagerUrl := a.Configmap.Data["KLOVERCLOUD_CI_INTEGRATION_MANAGER_URL"]
+	replacedUrl := strings.ReplaceAll(integrationManagerUrl, ".klovercloud.", "."+namespace+".")
+	a.Configmap.Data["KLOVERCLOUD_CI_INTEGRATION_MANAGER_URL"] = replacedUrl
+
+	eventStoreUrl := a.Configmap.Data["KLOVERCLOUD_CI_EVENT_STORE"]
+	replacedUrl = strings.ReplaceAll(eventStoreUrl, ".klovercloud.", "."+namespace+".")
+	a.Configmap.Data["KLOVERCLOUD_CI_EVENT_STORE"] = replacedUrl
+
+	wsEventStoreUrl := a.Configmap.Data["KLOVERCLOUD_CI_EVENT_STORE_WS"]
+	replacedUrl = strings.ReplaceAll(wsEventStoreUrl, ".klovercloud.", "."+namespace+".")
+	a.Configmap.Data["KLOVERCLOUD_CI_EVENT_STORE_WS"] = replacedUrl
+
+	lightHouseCommandUrl := a.Configmap.Data["LIGHTHOUSE_COMMAND_SERVER_URL"]
+	replacedUrl = strings.ReplaceAll(lightHouseCommandUrl, ".klovercloud.", "."+namespace+".")
+	a.Configmap.Data["LIGHTHOUSE_COMMAND_SERVER_URL"] = replacedUrl
+
+	lightHouseQuery := a.Configmap.Data["LIGHTHOUSE_QUERY_SERVER_URL"]
+	replacedUrl = strings.ReplaceAll(lightHouseQuery, ".klovercloud.", "."+namespace+".")
+	a.Configmap.Data["LIGHTHOUSE_QUERY_SERVER_URL"] = replacedUrl
+
 	return a
 }
 

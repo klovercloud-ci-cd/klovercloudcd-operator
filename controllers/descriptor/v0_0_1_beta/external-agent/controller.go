@@ -12,6 +12,7 @@ import (
 	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/rest"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"strings"
 )
 
 type agent struct {
@@ -59,7 +60,7 @@ func (a agent) ModifyConfigmap(namespace string, agent v1alpha1.Agent) service.E
 	a.Configmap.ObjectMeta.Labels["app"] = "klovercloudCD"
 	a.Configmap.ObjectMeta.Namespace = namespace
 	a.Configmap.Data["TOKEN"] = agent.Token
-	a.Configmap.Data["EVENT_STORE_URL"]=agent.EventStoreUrl
+	a.Configmap.Data["EVENT_STORE_URL"] = agent.EventStoreUrl
 
 	if agent.PullSize != "" {
 		a.Configmap.Data["PULL_SIZE"] = agent.PullSize
@@ -73,6 +74,15 @@ func (a agent) ModifyConfigmap(namespace string, agent v1alpha1.Agent) service.E
 	if agent.TerminalApiVersion != "" {
 		a.Configmap.Data["TERMINAL_API_VERSION"] = agent.TerminalApiVersion
 	}
+
+	EVENT_STORE_URL := a.Configmap.Data["EVENT_STORE_URL"]
+	replacedUrl := strings.ReplaceAll(EVENT_STORE_URL, ".klovercloud.", "."+namespace+".")
+	a.Configmap.Data["EVENT_STORE_URL"] = replacedUrl
+
+	API_SERVICE_URL := a.Configmap.Data["API_SERVICE_URL"]
+	replacedUrl = strings.ReplaceAll(API_SERVICE_URL, ".klovercloud.", "."+namespace+".")
+	a.Configmap.Data["API_SERVICE_URL"] = replacedUrl
+
 	return a
 }
 
@@ -243,7 +253,7 @@ func getDeploymentFromFile() appv1.Deployment {
 	return *obj.(*appv1.Deployment)
 }
 
-func New(client client.Client,restConfig *rest.Config) service.ExternalAgent {
+func New(client client.Client, restConfig *rest.Config) service.ExternalAgent {
 	return agent{
 		ClusterRole:        getClusterRoleFromFile(),
 		ClusterRoleBinding: getClusterRoleBindingFromFile(),
@@ -252,7 +262,7 @@ func New(client client.Client,restConfig *rest.Config) service.ExternalAgent {
 		Deployment:         getDeploymentFromFile(),
 		Service:            getServiceFromFile(),
 		Client:             client,
-		RestConfig:restConfig,
+		RestConfig:         restConfig,
 		Error:              nil,
 	}
 }

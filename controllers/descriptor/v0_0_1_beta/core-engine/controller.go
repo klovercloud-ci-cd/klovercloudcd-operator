@@ -15,6 +15,7 @@ import (
 	"k8s.io/client-go/kubernetes/scheme"
 	"log"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"strings"
 )
 
 type coreEngine struct {
@@ -39,6 +40,11 @@ func (c coreEngine) ModifyConfigmap(namespace string, db v1alpha1.DB) service.Co
 		c.ConfigMap.Data["MONGO_SERVER"] = db.ServerURL
 		c.ConfigMap.Data["MONGO_PORT"] = db.ServerPort
 	}
+
+	EVENT_STORE_URL := c.ConfigMap.Data["EVENT_STORE_URL"]
+	replacedUrl := strings.ReplaceAll(EVENT_STORE_URL, ".klovercloud.", "."+namespace+".")
+	c.ConfigMap.Data["EVENT_STORE_URL"] = replacedUrl
+
 	return c
 }
 
