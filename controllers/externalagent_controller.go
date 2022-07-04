@@ -18,6 +18,9 @@ package controllers
 
 import (
 	"context"
+	"github.com/klovercloud-ci-cd/klovercloudcd-operator/controllers/descriptor"
+	"k8s.io/apimachinery/pkg/api/errors"
+	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -47,9 +50,27 @@ type ExternalAgentReconciler struct {
 // For more details, check Reconcile and its Result here:
 // - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.12.1/pkg/reconcile
 func (r *ExternalAgentReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
-	_ = log.FromContext(ctx)
+	log := log.FromContext(ctx)
+	config := &basev1alpha1.ExternalAgent{}
+	err := r.Get(ctx, req.NamespacedName, config)
+	if err != nil {
+		if errors.IsNotFound(err) {
+			// Request object not found, could have been deleted after reconcile request.
+			// Owned objects are automatically garbage collected. For additional cleanup logic use finalizers.
+			// Return and don't requeue
+			return reconcile.Result{}, nil
+		}
+		// Error reading the object - requeue the request.
+		log.Error(err, " Error reading the object - requeue the request")
+		return reconcile.Result{}, err
+	}
 
 	// TODO(user): your logic here
+
+	err = descriptor.ApplyExternalAgent(r.Client, config.Namespace, config.Spec.Agent, string(config.Spec.Version))
+	if err != nil {
+		return ctrl.Result{}, err
+	}
 
 	return ctrl.Result{}, nil
 }
