@@ -20,9 +20,11 @@ import (
 	"context"
 	"github.com/klovercloud-ci-cd/klovercloudcd-operator/controllers/descriptor"
 	appsv1 "k8s.io/api/apps/v1"
+	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/rest"
+	"reflect"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
 	"k8s.io/apimachinery/pkg/runtime"
@@ -70,12 +72,93 @@ func (r *KlovercloudCDReconciler) Reconcile(ctx context.Context, req ctrl.Reques
 	}
 	// TODO(user): your logic here
 
-	// Apply prerequisites
-	err = descriptor.ApplyPrerequisites(r.Client, config.Namespace, config.Spec.Database, config.Spec.Security, string(config.Spec.Version))
-	if err != nil {
+
+	// ********************************************** All About Prerequisites ****************************************************
+	existingMongoSecret:=&corev1.Secret{}
+	err = r.Get(ctx, types.NamespacedName{Name: "klovercloud-mongo-secret", Namespace: config.Namespace}, existingMongoSecret)
+	if err != nil && errors.IsNotFound(err) {
+		// Define a new deployment
+		err = descriptor.ApplyPrerequisites(r.Client, config.Namespace, config.Spec.Database, config.Spec.Security, string(config.Spec.Version))
+		if err != nil {
+			log.Error(err, "Failed to apply Prerequisites.",err.Error())
+			return ctrl.Result{}, err
+		}
+		// Deployment created successfully - return and requeue
+		return ctrl.Result{Requeue: true}, nil
+	} else if err != nil {
+		log.Error(err, "Failed to get klovercloud-mongo-secret")
 		return ctrl.Result{}, err
 	}
-    // ********************************************** All About Api Service ****************************************************
+
+	redeploy:=false
+
+	isSecretChanged:=existingMongoSecret.StringData["MONGO_USERNAME"]!=config.Spec.Database.UserName || existingMongoSecret.StringData["MONGO_PASSWORD"]!=config.Spec.Database.Password
+	if isSecretChanged{
+		redeploy=true
+		existingMongoSecret.StringData["MONGO_USERNAME"]=config.Spec.Database.UserName
+		existingMongoSecret.StringData["MONGO_PASSWORD"]=config.Spec.Database.Password
+	}
+
+	existingSecurityServerConfigmap:=&corev1.ConfigMap{}
+	err = r.Get(ctx, types.NamespacedName{Name: "klovercloud-security-envar-config", Namespace: config.Namespace}, existingSecurityServerConfigmap)
+
+	if existingSecurityServerConfigmap.Data["MAIL_SERVER_HOST_EMAIL"]!=config.Spec.Security.MailServerHostEmail{
+		redeploy=true
+		existingSecurityServerConfigmap.Data["MAIL_SERVER_HOST_EMAIL"]=config.Spec.Security.MailServerHostEmail
+	}
+	if existingSecurityServerConfigmap.Data["MAIL_SERVER_HOST_EMAIL_SECRET"]!=config.Spec.Security.MailServerHostEmailSecret{
+		redeploy=true
+		existingSecurityServerConfigmap.Data["MAIL_SERVER_HOST_EMAIL_SECRET"]=config.Spec.Security.MailServerHostEmailSecret
+	}
+	if existingSecurityServerConfigmap.Data["SMTP_HOST"]!=config.Spec.Security.SMTPHost{
+		redeploy=true
+		existingSecurityServerConfigmap.Data["SMTP_HOST"]=config.Spec.Security.SMTPHost
+	}
+	if existingSecurityServerConfigmap.Data["SMTP_PORT"]!=config.Spec.Security.SMTPPort{
+		redeploy=true
+		existingSecurityServerConfigmap.Data["SMTP_PORT"]=config.Spec.Security.SMTPPort
+	}
+	if existingSecurityServerConfigmap.Data["USER_FIRST_NAME"]!=config.Spec.Security.User.FirstName{
+		redeploy=true
+		existingSecurityServerConfigmap.Data["USER_FIRST_NAME"]=config.Spec.Security.User.FirstName
+	}
+	if existingSecurityServerConfigmap.Data["USER_LAST_NAME"]!=config.Spec.Security.User.LastName{
+		redeploy=true
+		existingSecurityServerConfigmap.Data["USER_LAST_NAME"]=config.Spec.Security.User.LastName
+	}
+	if existingSecurityServerConfigmap.Data["USER_EMAIL"]!=config.Spec.Security.User.Email{
+		redeploy=true
+		existingSecurityServerConfigmap.Data["USER_EMAIL"]=config.Spec.Security.User.Email
+	}
+	if existingSecurityServerConfigmap.Data["USER_PHONE"]!=config.Spec.Security.User.Phone{
+		redeploy=true
+		existingSecurityServerConfigmap.Data["USER_PHONE"]=config.Spec.Security.User.Phone
+	}
+	if existingSecurityServerConfigmap.Data["USER_PASSWORD"]!=config.Spec.Security.User.Password{
+		redeploy=true
+		existingSecurityServerConfigmap.Data["USER_PASSWORD"]=config.Spec.Security.User.Password
+	}
+	if existingSecurityServerConfigmap.Data["COMPANY_NAME"]!=config.Spec.Security.User.CompanyName{
+		redeploy=true
+		existingSecurityServerConfigmap.Data["COMPANY_NAME"]=config.Spec.Security.User.CompanyName
+	}
+
+	if redeploy{
+		err = r.Update(ctx, existingSecurityServerConfigmap)
+		if err != nil {
+			log.Error(err, "Failed to update Security Servers Configmap.", err.Error())
+			return ctrl.Result{}, err
+		}
+		// Spec updated - return and requeue
+		return ctrl.Result{Requeue: true}, nil
+	}
+
+
+	// ********************************************** Prerequisites Finished **************************************************************
+
+
+
+	// ********************************************** All About Api Service ****************************************************
 	// Apply api service
 	// Check if the deployment already exists, if not create a new one
 	existingApiService := &appsv1.Deployment{}
@@ -96,7 +179,61 @@ func (r *KlovercloudCDReconciler) Reconcile(ctx context.Context, req ctrl.Reques
 
 	// Ensure the deployment size  and other fields are same as the spec,
 
-	// Need
+	redeploy=false
+
+	if *existingApiService.Spec.Replicas != config.Spec.ApiService.Size {
+		redeploy=true
+		existingApiService.Spec.Replicas = &config.Spec.ApiService.Size
+	}
+
+	for i,each:= range existingApiService.Spec.Template.Spec.Containers{
+		if each.Name=="app"{
+			isRequestedResourcesChanged:=each.Resources.Requests.Cpu()!=config.Spec.ApiService.Resources.Requests.Cpu() || each.Resources.Requests.Memory()!=config.Spec.ApiService.Resources.Requests.Memory()
+			isLimitedRequestedChanged:=each.Resources.Limits.Cpu()!=config.Spec.ApiService.Resources.Limits.Cpu() || each.Resources.Limits.Memory()!=config.Spec.ApiService.Resources.Limits.Memory()
+
+			if isRequestedResourcesChanged || isLimitedRequestedChanged{
+				redeploy=true
+				existingApiService.Spec.Template.Spec.Containers[i].Resources=config.Spec.ApiService.Resources
+				break
+			}
+
+		}
+	}
+	if redeploy{
+		err = r.Update(ctx, existingApiService)
+		if err != nil {
+			log.Error(err, "Failed to update Deployment.", "Deployment.Namespace:", existingApiService.Namespace, "Deployment.Name:", existingApiService.Name)
+			return ctrl.Result{}, err
+		}
+		// Spec updated - return and requeue
+		return ctrl.Result{Requeue: true}, nil
+	}
+
+
+
+	// Update the ApiService status with the pod names
+	// List the pods for this api service's deployment
+	podList := &corev1.PodList{}
+	listOpts := []client.ListOption{
+		client.InNamespace(config.Namespace),
+		client.MatchingLabels(map[string]string{"app":"klovercloud-api-service"}),
+	}
+	if err = r.List(ctx, podList, listOpts...); err != nil {
+		log.Error(err, "Failed to list pods.", "ApiService.Namespace:", config.Namespace, "ApiService.Name:","klovercloud-api-service")
+		return ctrl.Result{}, err
+	}
+	podNames := getPodNames(podList.Items)
+
+	// Update status.Nodes if needed
+	if !reflect.DeepEqual(podNames, config.Status.ApiServicePods) {
+		config.Status.ApiServicePods = podNames
+		err := r.Status().Update(ctx, config)
+		if err != nil {
+			log.Error(err, "Failed to update ApiService status")
+			return ctrl.Result{}, err
+		}
+	}
+
     // **********************************************  Api Service Finished **************************************************************
 
 
@@ -149,6 +286,16 @@ func (r *KlovercloudCDReconciler) Reconcile(ctx context.Context, req ctrl.Reques
 
 	return ctrl.Result{}, nil
 }
+
+// getPodNames returns the pod names of the array of pods passed in
+func getPodNames(pods []corev1.Pod) []string {
+	var podNames []string
+	for _, pod := range pods {
+		podNames = append(podNames, pod.Name)
+	}
+	return podNames
+}
+
 
 // SetupWithManager sets up the controller with the Manager.
 func (r *KlovercloudCDReconciler) SetupWithManager(mgr ctrl.Manager) error {

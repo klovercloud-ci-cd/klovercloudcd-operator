@@ -9,7 +9,9 @@ import (
 	"github.com/klovercloud-ci-cd/klovercloudcd-operator/controllers/descriptor/v0_0_1_beta/utility"
 	"github.com/klovercloud-ci-cd/klovercloudcd-operator/enums"
 	"io/ioutil"
+	appsv1 "k8s.io/api/apps/v1"
 	coreV1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/yaml"
@@ -64,12 +66,10 @@ func (p prerequisites) ModifySecurityConfigMap(namespace string, db v1alpha1.DB,
 	}
 
 	API_SERVER_URL := p.Configmap.Data["API_SERVER_URL"]
-	replacedUrl := strings.ReplaceAll(API_SERVER_URL, ".klovercloud.", "."+namespace+".")
-	p.Configmap.Data["API_SERVER_URL"] = replacedUrl
+	p.Configmap.Data["API_SERVER_URL"] = strings.ReplaceAll(API_SERVER_URL, ".klovercloud.", "."+namespace+".")
 
 	INTEGRATION_MANAGER_URL := p.Configmap.Data["INTEGRATION_MANAGER_URL"]
-	replacedUrl = strings.ReplaceAll(INTEGRATION_MANAGER_URL, ".klovercloud.", "."+namespace+".")
-	p.Configmap.Data["INTEGRATION_MANAGER_URL"] = replacedUrl
+	p.Configmap.Data["INTEGRATION_MANAGER_URL"] = strings.ReplaceAll(INTEGRATION_MANAGER_URL, ".klovercloud.", "."+namespace+".")
 
 	return p
 }
@@ -102,8 +102,12 @@ func (p prerequisites) ApplySecret() error {
 }
 
 func (p prerequisites) ApplyTektonDescriptor() error {
-	for _, each := range p.TektonDescriptor {
-		return p.Client.Create(context.Background(), &each)
+	existingTektonController := &appsv1.Deployment{}
+	err := p.Client.Get(context.Background(), types.NamespacedName{Name: "tekton-pipelines-controller", Namespace: p.Secret.Namespace}, existingTektonController)
+	if err != nil && errors.IsNotFound(err) {
+		for _, each := range p.TektonDescriptor {
+			return p.Client.Create(context.Background(), &each)
+		}
 	}
 	return nil
 }

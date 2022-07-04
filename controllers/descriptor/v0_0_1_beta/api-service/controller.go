@@ -65,8 +65,7 @@ func (a apiService) ModifyConfigmap(namespace string) service.ApiService {
 	a.Configmap.Data["LIGHTHOUSE_COMMAND_SERVER_URL"] = replacedUrl
 
 	lightHouseQuery := a.Configmap.Data["LIGHTHOUSE_QUERY_SERVER_URL"]
-	replacedUrl = strings.ReplaceAll(lightHouseQuery, ".klovercloud.", "."+namespace+".")
-	a.Configmap.Data["LIGHTHOUSE_QUERY_SERVER_URL"] = replacedUrl
+	a.Configmap.Data["LIGHTHOUSE_QUERY_SERVER_URL"] = strings.ReplaceAll(lightHouseQuery, ".klovercloud.", "."+namespace+".")
 
 	return a
 }
