@@ -103,6 +103,14 @@ spec:
             type: object
           status:
             description: ExternalAgentStatus defines the observed state of ExternalAgent
+            properties:
+              agent_pods:
+                description: AgentPods are the names of the Agent pods
+                items:
+                  type: string
+                type: array
+            required:
+            - agent_pods
             type: object
         type: object
     served: true

@@ -40,6 +40,9 @@ type ExternalAgentSpec struct {
 type ExternalAgentStatus struct {
 	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
+
+	// AgentPods are the names of the Agent pods
+	AgentPods []string `json:"agent_pods"`
 }
 
 //+kubebuilder:object:root=true
