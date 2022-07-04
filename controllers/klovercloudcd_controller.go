@@ -19,7 +19,9 @@ package controllers
 import (
 	"context"
 	"github.com/klovercloud-ci-cd/klovercloudcd-operator/controllers/descriptor"
+	appsv1 "k8s.io/api/apps/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/rest"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
@@ -68,20 +70,36 @@ func (r *KlovercloudCDReconciler) Reconcile(ctx context.Context, req ctrl.Reques
 	}
 	// TODO(user): your logic here
 
-	// Check if the deployment already exists, if not create a new one
-	// Ensure the deployment size is the same as the spec
-
 	// Apply prerequisites
 	err = descriptor.ApplyPrerequisites(r.Client, config.Namespace, config.Spec.Database, config.Spec.Security, string(config.Spec.Version))
 	if err != nil {
 		return ctrl.Result{}, err
 	}
-
+    // ********************************************** All About Api Service ****************************************************
 	// Apply api service
-	err=descriptor.ApplyApiService(r.Client,config.Namespace,config.Spec.ApiService,string(config.Spec.Version))
-	if err != nil {
+	// Check if the deployment already exists, if not create a new one
+	existingApiService := &appsv1.Deployment{}
+	err = r.Get(ctx, types.NamespacedName{Name: "klovercloud-api-service", Namespace: config.Namespace}, existingApiService)
+	if err != nil && errors.IsNotFound(err) {
+		// Define a new deployment
+		err=descriptor.ApplyApiService(r.Client,config.Namespace,config.Spec.ApiService,string(config.Spec.Version))
+		if err != nil {
+			log.Error(err, "Failed to create new Deployment", "Deployment.Namespace", config.Namespace, "Deployment.Name", "klovercloud-api-service")
+			return ctrl.Result{}, err
+		}
+		// Deployment created successfully - return and requeue
+		return ctrl.Result{Requeue: true}, nil
+	} else if err != nil {
+		log.Error(err, "Failed to get Deployment")
 		return ctrl.Result{}, err
 	}
+
+	// Ensure the deployment size  and other fields are same as the spec,
+
+	// Need
+    // **********************************************  Api Service Finished **************************************************************
+
+
 	// Apply integration manager
 	err = descriptor.ApplyIntegrationManager(r.Client, config.Namespace, config.Spec.Database, config.Spec.IntegrationManager, string(config.Spec.Version))
 	if err != nil {
