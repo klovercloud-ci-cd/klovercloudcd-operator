@@ -1,0 +1,32 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: klovercloud-ci-console
+  namespace: klovercloud
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: klovercloud-ci-console
+  template:
+    metadata:
+      labels:
+        app: klovercloud-ci-console
+    spec:
+      terminationGracePeriodSeconds: 60
+      containers:
+        - name: app
+          imagePullPolicy: Always
+          image: shabrul2451/klovercloud-ci-console:v0.0.1
+          resources:
+            limits:
+              cpu: 100m
+              memory: 256Mi
+            requests:
+              cpu: 66m
+              memory: 256Mi
+          envFrom:
+            - configMapRef:
+                name: ci-console-config
+          ports:
+            - containerPort: 8080
