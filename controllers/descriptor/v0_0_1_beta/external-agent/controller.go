@@ -10,7 +10,6 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
 	"k8s.io/client-go/kubernetes/scheme"
-	"k8s.io/client-go/rest"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"strings"
 )
@@ -23,7 +22,6 @@ type agent struct {
 	Deployment         appv1.Deployment
 	Service            corev1.Service
 	Client             client.Client
-	RestConfig         *rest.Config
 	Error              error
 }
 
@@ -253,7 +251,7 @@ func getDeploymentFromFile() appv1.Deployment {
 	return *obj.(*appv1.Deployment)
 }
 
-func New(client client.Client, restConfig *rest.Config) service.ExternalAgent {
+func New(client client.Client) service.ExternalAgent {
 	return agent{
 		ClusterRole:        getClusterRoleFromFile(),
 		ClusterRoleBinding: getClusterRoleBindingFromFile(),
@@ -262,7 +260,6 @@ func New(client client.Client, restConfig *rest.Config) service.ExternalAgent {
 		Deployment:         getDeploymentFromFile(),
 		Service:            getServiceFromFile(),
 		Client:             client,
-		RestConfig:         restConfig,
 		Error:              nil,
 	}
 }

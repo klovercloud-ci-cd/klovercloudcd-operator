@@ -73,9 +73,9 @@ func ApplyLightHouseQuery(client client.Client, namespace string, db v1alpha1.DB
 	return errors.New("[ERROR]: Version is not valid! Failed to apply light house query")
 }
 
-func ApplyExternalAgent(client client.Client, restConfig *rest.Config, namespace string, agent v1alpha1.Agent, version string) error {
+func ApplyExternalAgent(client client.Client,namespace string, agent v1alpha1.Agent, version string) error {
 	if version == string(enums.V0_0_1_BETA) {
-		return v0_0_1_betaExternalAgent.New(client, restConfig).ModifyClusterRole().ModifyServiceAccount(namespace, agent).ModifyClusterRoleBinding(namespace, agent).ModifyConfigmap(namespace, agent).ModifyDeployment(namespace, agent).ModifyService(namespace).Apply(true)
+		return v0_0_1_betaExternalAgent.New(client).ModifyClusterRole().ModifyServiceAccount(namespace, agent).ModifyClusterRoleBinding(namespace, agent).ModifyConfigmap(namespace, agent).ModifyDeployment(namespace, agent).ModifyService(namespace).Apply(false)
 	}
 	return errors.New("[ERROR]: Version is not valid! Failed to apply agent")
 }
