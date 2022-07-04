@@ -55,8 +55,10 @@ func (a apiService) ModifyDeployment(namespace string, apiService v1alpha1.ApiSe
 	}
 	a.Deployment.ObjectMeta.Labels["app"] = "klovercloudCD"
 	a.Deployment.ObjectMeta.Namespace = namespace
-	for i, _ := range a.Deployment.Spec.Template.Spec.Containers {
-		a.Deployment.Spec.Template.Spec.Containers[i].Resources = apiService.Resources
+	if apiService.Resources.Requests.Cpu() != nil || apiService.Resources.Limits.Cpu() != nil {
+		for index, _ := range a.Deployment.Spec.Template.Spec.Containers {
+			a.Deployment.Spec.Template.Spec.Containers[index].Resources = apiService.Resources
+		}
 	}
 	return a
 }

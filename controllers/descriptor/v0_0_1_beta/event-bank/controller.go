@@ -43,8 +43,10 @@ func (e eventBank) ModifyDeployment(namespace string, eventBank v1alpha1.EventBa
 	}
 	e.Deployment.ObjectMeta.Labels["app"] = "klovercloudCD"
 	e.Deployment.ObjectMeta.Namespace = namespace
-	for i, _ := range e.Deployment.Spec.Template.Spec.Containers {
-		e.Deployment.Spec.Template.Spec.Containers[i].Resources = eventBank.Resources
+	if eventBank.Resources.Requests.Cpu() != nil || eventBank.Resources.Limits.Cpu() != nil {
+		for index, _ := range e.Deployment.Spec.Template.Spec.Containers {
+			e.Deployment.Spec.Template.Spec.Containers[index].Resources = eventBank.Resources
+		}
 	}
 	return e
 }
