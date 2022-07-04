@@ -65,6 +65,44 @@ type KlovercloudCDSpec struct {
 
 }
 
+// KlovercloudCDStatus defines the observed state of KlovercloudCD
+type KlovercloudCDStatus struct {
+	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
+	// Important: Run "make" to regenerate code after modifying this file
+
+	// SecurityPods are the names of the Security pods
+	SecurityPods []string `json:"security_pods"`
+
+	// LightHouseQueryPods are the names of the LightHouseQuery pods
+	LightHouseQueryPods []string `json:"light_house_query_pods"`
+
+	// LightHouseCommandPods are the names of the LightHouseCommand pods
+	LightHouseCommandPods []string `json:"light_house_command_pods"`
+
+	// ApiServicePods are the names of the ApiService pods
+	ApiServicePods []string `json:"api_service_pods"`
+
+	// AgentPods are the names of the Agent pods
+	AgentPods []string `json:"agent_pods"`
+
+	// IntegrationManagerPods are the names of the IntegrationManager pods
+	IntegrationManagerPods []string `json:"integration_manager_pods"`
+
+	// EventBankPods are the names of the EventBank pods
+	EventBankPods []string `json:"event_bank_pods"`
+
+	// CoreEnginePods are the names of the CoreEngine pods
+	CoreEnginePods []string `json:"core_engine_pods"`
+
+	// ConsolePods are the names of the Console pods
+	ConsolePods []string `json:"console_pods"`
+
+	// TerminalPods are the names of the Terminal pods
+	TerminalPods []string `json:"terminal_pods"`
+
+}
+
+
 // Terminal defines the config of Terminal service
 type Terminal struct {
 	// Enabled can be true or false.
@@ -208,9 +246,6 @@ type LightHouseQuery struct {
 	Resources corev1.ResourceRequirements `json:"resources,omitempty" protobuf:"bytes,8,opt,name=resources"`
 }
 
-
-
-
 // Security defines security service configuration
 type Security struct {
 	// User config of security server
@@ -275,11 +310,6 @@ type DB struct {
 
 }
 
-// KlovercloudCDStatus defines the observed state of KlovercloudCD
-type KlovercloudCDStatus struct {
-	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
-	// Important: Run "make" to regenerate code after modifying this file
-}
 
 //+kubebuilder:object:root=true
 //+kubebuilder:subresource:status

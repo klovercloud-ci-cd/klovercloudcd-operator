@@ -546,6 +546,71 @@ spec:
             type: object
           status:
             description: KlovercloudCDStatus defines the observed state of KlovercloudCD
+            properties:
+              agent_pods:
+                description: AgentPods are the names of the Agent pods
+                items:
+                  type: string
+                type: array
+              api_service_pods:
+                description: ApiServicePods are the names of the ApiService pods
+                items:
+                  type: string
+                type: array
+              console_pods:
+                description: ConsolePods are the names of the Console pods
+                items:
+                  type: string
+                type: array
+              core_engine_pods:
+                description: CoreEnginePods are the names of the CoreEngine pods
+                items:
+                  type: string
+                type: array
+              event_bank_pods:
+                description: EventBankPods are the names of the EventBank pods
+                items:
+                  type: string
+                type: array
+              integration_manager_pods:
+                description: IntegrationManagerPods are the names of the IntegrationManager
+                  pods
+                items:
+                  type: string
+                type: array
+              light_house_command_pods:
+                description: LightHouseCommandPods are the names of the LightHouseCommand
+                  pods
+                items:
+                  type: string
+                type: array
+              light_house_query_pods:
+                description: LightHouseQueryPods are the names of the LightHouseQuery
+                  pods
+                items:
+                  type: string
+                type: array
+              security_pods:
+                description: SecurityPods are the names of the Security pods
+                items:
+                  type: string
+                type: array
+              terminal_pods:
+                description: TerminalPods are the names of the Terminal pods
+                items:
+                  type: string
+                type: array
+            required:
+            - agent_pods
+            - api_service_pods
+            - console_pods
+            - core_engine_pods
+            - event_bank_pods
+            - integration_manager_pods
+            - light_house_command_pods
+            - light_house_query_pods
+            - security_pods
+            - terminal_pods
             type: object
         type: object
     served: true
