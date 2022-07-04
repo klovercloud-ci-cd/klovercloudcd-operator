@@ -48,8 +48,10 @@ func (c coreEngine) ModifyDeployment(namespace string, coreEngine v1alpha1.CoreE
 	}
 	c.Deployment.ObjectMeta.Labels["app"] = "klovercloudCD"
 	c.Deployment.ObjectMeta.Namespace = namespace
-	for i, _ := range c.Deployment.Spec.Template.Spec.Containers {
-		c.Deployment.Spec.Template.Spec.Containers[i].Resources = coreEngine.Resources
+	if coreEngine.Resources.Requests.Cpu() != nil || coreEngine.Resources.Limits.Cpu() != nil {
+		for index, _ := range c.Deployment.Spec.Template.Spec.Containers {
+			c.Deployment.Spec.Template.Spec.Containers[index].Resources = coreEngine.Resources
+		}
 	}
 	return c
 }
@@ -63,28 +65,34 @@ func (c coreEngine) ModifyService(namespace string) service.CoreEngine {
 	return c
 }
 
-func (c coreEngine) ModifyClusterRole(namespace string) {
+func (c coreEngine) ModifyClusterRole(namespace string) service.CoreEngine {
 	if c.ClusterRole.ObjectMeta.Labels == nil {
 		c.ClusterRole.ObjectMeta.Labels = make(map[string]string)
 	}
 	c.ClusterRole.ObjectMeta.Labels["app"] = "klovercloudCD"
 	c.ClusterRole.ObjectMeta.Namespace = namespace
+
+	return c
 }
 
-func (c coreEngine) ModifyClusterRoleBinding(namespace string) {
+func (c coreEngine) ModifyClusterRoleBinding(namespace string) service.CoreEngine {
 	if c.ClusterRoleBinding.ObjectMeta.Labels == nil {
 		c.ClusterRoleBinding.ObjectMeta.Labels = make(map[string]string)
 	}
 	c.ClusterRoleBinding.ObjectMeta.Labels["app"] = "klovercloudCD"
 	c.ClusterRoleBinding.ObjectMeta.Namespace = namespace
+
+	return c
 }
 
-func (c coreEngine) ModifyServiceAccount(namespace string) {
+func (c coreEngine) ModifyServiceAccount(namespace string) service.CoreEngine {
 	if c.ServiceAccount.ObjectMeta.Labels == nil {
 		c.ServiceAccount.ObjectMeta.Labels = make(map[string]string)
 	}
 	c.ServiceAccount.ObjectMeta.Labels["app"] = "klovercloudCD"
 	c.ServiceAccount.ObjectMeta.Namespace = namespace
+
+	return c
 }
 
 func (c coreEngine) Apply(wait bool) error {

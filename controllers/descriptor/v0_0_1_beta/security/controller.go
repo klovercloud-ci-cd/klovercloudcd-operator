@@ -42,8 +42,10 @@ func (s security) ModifyDeployment(namespace string, security v1alpha1.Security)
 	}
 	s.Deployment.ObjectMeta.Labels["app"] = "klovercloudCD"
 	s.Deployment.ObjectMeta.Namespace = namespace
-	for i, _ := range s.Deployment.Spec.Template.Spec.Containers {
-		s.Deployment.Spec.Template.Spec.Containers[i].Resources = security.Resources
+	if security.Resources.Requests.Cpu() != nil || security.Resources.Limits.Cpu() != nil {
+		for index, _ := range s.Deployment.Spec.Template.Spec.Containers {
+			s.Deployment.Spec.Template.Spec.Containers[index].Resources = security.Resources
+		}
 	}
 	return s
 }
