@@ -12,6 +12,7 @@ import (
 	"k8s.io/client-go/kubernetes/scheme"
 	"log"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"strings"
 )
 
 type console struct {
@@ -28,6 +29,19 @@ func (c console) ModifyConfigmap(namespace string) service.Console {
 	}
 	c.Configmap.ObjectMeta.Labels["app"] = "klovercloudCD"
 	c.Configmap.ObjectMeta.Namespace = namespace
+
+	v1AuthEndpoint := c.Configmap.Data["v1AuthEndpoint"]
+	replacedUrl := strings.ReplaceAll(v1AuthEndpoint, ".klovercloud.", "."+namespace+".")
+	c.Configmap.Data["v1AuthEndpoint"] = replacedUrl
+
+	v1ApiEndPoint := c.Configmap.Data["v1ApiEndPoint"]
+	replacedUrl = strings.ReplaceAll(v1ApiEndPoint, ".klovercloud.", "."+namespace+".")
+	c.Configmap.Data["v1ApiEndPoint"] = replacedUrl
+
+	v1ApiEndPointWS := c.Configmap.Data["v1ApiEndPointWS"]
+	replacedUrl = strings.ReplaceAll(v1ApiEndPointWS, ".klovercloud.", "."+namespace+".")
+	c.Configmap.Data["v1ApiEndPointWS"] = replacedUrl
+
 	return c
 }
 

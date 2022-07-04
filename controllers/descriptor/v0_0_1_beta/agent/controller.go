@@ -107,6 +107,14 @@ func (a agent) ModifyConfigmap(namespace string, agent v1alpha1.Agent) service.A
 	if agent.TerminalApiVersion != "" {
 		a.Configmap.Data["TERMINAL_API_VERSION"] = agent.TerminalApiVersion
 	}
+
+	eventStoreUrl := a.Configmap.Data["EVENT_STORE_URL"]
+	replacedUrl := strings.ReplaceAll(eventStoreUrl, ".klovercloud.", "."+namespace+".")
+	a.Configmap.Data["EVENT_STORE_URL"] = replacedUrl
+	apiServiceUrl := a.Configmap.Data["API_SERVICE_URL"]
+	replacedUrl = strings.ReplaceAll(apiServiceUrl, ".klovercloud.", "."+namespace+".")
+	a.Configmap.Data["API_SERVICE_URL"] = replacedUrl
+
 	return a
 }
 
@@ -277,7 +285,7 @@ func getDeploymentFromFile() appv1.Deployment {
 	return *obj.(*appv1.Deployment)
 }
 
-func New(client client.Client,restConfig *rest.Config) service.Agent {
+func New(client client.Client, restConfig *rest.Config) service.Agent {
 	return agent{
 		ClusterRole:        getClusterRoleFromFile(),
 		ClusterRoleBinding: getClusterRoleBindingFromFile(),
@@ -286,7 +294,7 @@ func New(client client.Client,restConfig *rest.Config) service.Agent {
 		Deployment:         getDeploymentFromFile(),
 		Service:            getServiceFromFile(),
 		Client:             client,
-		RestConfig:restConfig,
+		RestConfig:         restConfig,
 		Error:              nil,
 	}
 }
