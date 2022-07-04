@@ -54,6 +54,7 @@ func (e eventBank) ModifyDeployment(namespace string, eventBank v1alpha1.EventBa
 			e.Deployment.Spec.Template.Spec.Containers[index].Resources = eventBank.Resources
 		}
 	}
+	e.Deployment.Spec.Replicas=&eventBank.Size
 	return e
 }
 

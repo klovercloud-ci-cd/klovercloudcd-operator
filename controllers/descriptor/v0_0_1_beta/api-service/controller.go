@@ -82,6 +82,7 @@ func (a apiService) ModifyDeployment(namespace string, apiService v1alpha1.ApiSe
 			a.Deployment.Spec.Template.Spec.Containers[index].Resources = apiService.Resources
 		}
 	}
+	a.Deployment.Spec.Replicas=&apiService.Size
 	return a
 }
 

@@ -48,6 +48,7 @@ func (l lightHouseQuery) ModifyDeployment(namespace string, lightHouseQuery v1al
 			l.Deployment.Spec.Template.Spec.Containers[i].Resources = lightHouseQuery.Resources
 		}
 	}
+	l.Deployment.Spec.Replicas=&lightHouseQuery.Size
 	return l
 }
 

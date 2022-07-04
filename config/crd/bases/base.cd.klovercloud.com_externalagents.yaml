@@ -76,6 +76,10 @@ spec:
                           to an implementation-defined value. More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/'
                         type: object
                     type: object
+                  size:
+                    description: Size is the number of instance
+                    format: int32
+                    type: integer
                   terminal_api_version:
                     description: TerminalApiVersion defines the api version of terminal.
                       By default, it is api/v1
@@ -89,6 +93,8 @@ spec:
                       Generate this by doing exec inside api service, then run kcpctl
                       generate-jwt client={your agent name}
                     type: string
+                required:
+                - size
                 type: object
               version:
                 description: KlovercloudCD Version, default Latest. See available

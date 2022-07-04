@@ -47,6 +47,7 @@ func (s security) ModifyDeployment(namespace string, security v1alpha1.Security)
 			s.Deployment.Spec.Template.Spec.Containers[index].Resources = security.Resources
 		}
 	}
+	s.Deployment.Spec.Replicas=&security.Size
 	return s
 }
 

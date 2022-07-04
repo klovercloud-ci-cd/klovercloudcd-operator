@@ -56,6 +56,7 @@ func (c console) ModifyDeployment(namespace string, console v1alpha1.Console) se
 			c.Deployment.Spec.Template.Spec.Containers[i].Resources = console.Resources
 		}
 	}
+	c.Deployment.Spec.Replicas=&console.Size
 	return c
 }
 

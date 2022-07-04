@@ -70,14 +70,20 @@ type Terminal struct {
 	// Enabled can be true or false.
 	Enabled string  `json:"enabled"`
 
+	// Size is the number of instance
+	Size int32 `json:"size"`
+
 	// Resources defines cpu, memory requests and limits
 	Resources corev1.ResourceRequirements `json:"resources,omitempty" protobuf:"bytes,8,opt,name=resources"`
 }
 
-// CoreEngine defines the config of CoreEngine service
+// Console defines the config of Console service
 type Console struct {
 	// Enabled can be true or false.
 	Enabled string  `json:"enabled"`
+
+	// Size is the number of instance
+	Size int32 `json:"size"`
 
 	// Resources defines cpu, memory requests and limits
 	Resources corev1.ResourceRequirements `json:"resources,omitempty" protobuf:"bytes,8,opt,name=resources"`
@@ -86,6 +92,10 @@ type Console struct {
 
 // CoreEngine defines the config of CoreEngine service
 type CoreEngine struct {
+
+	// Size is the number of instance
+	Size int32 `json:"size"`
+
 	// Resources defines cpu, memory requests and limits
 	Resources corev1.ResourceRequirements `json:"resources,omitempty" protobuf:"bytes,8,opt,name=resources"`
 }
@@ -93,6 +103,9 @@ type CoreEngine struct {
 
 // EventBank defines the config of EventBank service
 type EventBank struct {
+	// Size is the number of instance
+	Size int32 `json:"size"`
+
 	// Resources defines cpu, memory requests and limits
 	Resources corev1.ResourceRequirements `json:"resources,omitempty" protobuf:"bytes,8,opt,name=resources"`
 }
@@ -100,6 +113,9 @@ type EventBank struct {
 
 // IntegrationManager defines the config of IntegrationManager service
 type IntegrationManager struct {
+
+	// Size is the number of instance
+	Size int32 `json:"size"`
 
 	// PerDayTotalProcess defines allowed per day total process
 	PerDayTotalProcess string `json:"per_day_total_process"` //default 30
@@ -123,6 +139,9 @@ type IntegrationManager struct {
 
 // Agent defines the config of Agent service
 type Agent struct {
+
+	// Size is the number of instance
+	Size int32 `json:"size"`
 
 	// PullSize defines how many jobs it will pull every period. It should depend on consumed resources
     PullSize string `json:"pull_size,omitempty"`
@@ -149,6 +168,10 @@ type Agent struct {
 
 // ApiService defines the config of api service
 type ApiService struct {
+
+	// Size is the number of instance
+	Size int32 `json:"size"`
+
 	// Resources defines cpu, memory requests and limits
 	Resources corev1.ResourceRequirements `json:"resources,omitempty" protobuf:"bytes,8,opt,name=resources"`
 }
@@ -167,12 +190,20 @@ type LightHouse struct {
 
 // LightHouse defines the config of lighthouse service
 type LightHouseCommand struct {
+
+	// Size is the number of instance
+	Size int32 `json:"size"`
+
 	// Resources defines cpu, memory requests and limits
 	Resources corev1.ResourceRequirements `json:"resources,omitempty" protobuf:"bytes,8,opt,name=resources"`
 }
 
 // LightHouseQuery defines the config of LightHouseQuery service
 type LightHouseQuery struct {
+
+	// Size is the number of instance
+	Size int32 `json:"size"`
+
 	// Resources defines cpu, memory requests and limits
 	Resources corev1.ResourceRequirements `json:"resources,omitempty" protobuf:"bytes,8,opt,name=resources"`
 }
@@ -196,6 +227,9 @@ type Security struct {
 
 	// SMTPPort mail server smtp port
 	SMTPPort string `json:"smtp_port"`
+
+	// Size is the number of instance
+	Size int32 `json:"size"`
 
 	// Resources defines cpu, memory requests and limits
 	Resources corev1.ResourceRequirements `json:"resources,omitempty" protobuf:"bytes,8,opt,name=resources"`

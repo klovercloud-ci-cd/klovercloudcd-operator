@@ -97,6 +97,7 @@ func (a agent) ModifyDeployment(namespace string, agent v1alpha1.Agent) service.
 			a.Deployment.Spec.Template.Spec.Containers[index].Resources = agent.Resources
 		}
 	}
+	a.Deployment.Spec.Replicas=&agent.Size
 	return a
 }
 

@@ -76,6 +76,10 @@ spec:
                           to an implementation-defined value. More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/'
                         type: object
                     type: object
+                  size:
+                    description: Size is the number of instance
+                    format: int32
+                    type: integer
                   terminal_api_version:
                     description: TerminalApiVersion defines the api version of terminal.
                       By default, it is api/v1
@@ -89,6 +93,8 @@ spec:
                       Generate this by doing exec inside api service, then run kcpctl
                       generate-jwt client={your agent name}
                     type: string
+                required:
+                - size
                 type: object
               api_service:
                 description: ApiService config of api server
@@ -119,6 +125,12 @@ spec:
                           to an implementation-defined value. More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/'
                         type: object
                     type: object
+                  size:
+                    description: Size is the number of instance
+                    format: int32
+                    type: integer
+                required:
+                - size
                 type: object
               console:
                 description: Console config of Console server
@@ -152,8 +164,13 @@ spec:
                           to an implementation-defined value. More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/'
                         type: object
                     type: object
+                  size:
+                    description: Size is the number of instance
+                    format: int32
+                    type: integer
                 required:
                 - enabled
+                - size
                 type: object
               core_engine:
                 description: CoreEngine config of CoreEngine server
@@ -184,6 +201,12 @@ spec:
                           to an implementation-defined value. More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/'
                         type: object
                     type: object
+                  size:
+                    description: Size is the number of instance
+                    format: int32
+                    type: integer
+                required:
+                - size
                 type: object
               db:
                 description: DB config to be used
@@ -234,6 +257,12 @@ spec:
                           to an implementation-defined value. More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/'
                         type: object
                     type: object
+                  size:
+                    description: Size is the number of instance
+                    format: int32
+                    type: integer
+                required:
+                - size
                 type: object
               integration_manager:
                 description: IntegrationManager config of IntegrationManager server
@@ -283,12 +312,17 @@ spec:
                           to an implementation-defined value. More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/'
                         type: object
                     type: object
+                  size:
+                    description: Size is the number of instance
+                    format: int32
+                    type: integer
                 required:
                 - bitbucket_webhook_consuming_url
                 - concurrent_process
                 - github_webhook_consuming_url
                 - per_day_total_process
                 - pipeline_purging
+                - size
                 type: object
               light_house:
                 description: LightHouse config of lighthouse server
@@ -323,6 +357,12 @@ spec:
                               More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/'
                             type: object
                         type: object
+                      size:
+                        description: Size is the number of instance
+                        format: int32
+                        type: integer
+                    required:
+                    - size
                     type: object
                   enabled:
                     description: Enabled can be true or false.
@@ -357,6 +397,12 @@ spec:
                               More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/'
                             type: object
                         type: object
+                      size:
+                        description: Size is the number of instance
+                        format: int32
+                        type: integer
+                    required:
+                    - size
                     type: object
                 required:
                 - command
@@ -399,6 +445,10 @@ spec:
                           to an implementation-defined value. More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/'
                         type: object
                     type: object
+                  size:
+                    description: Size is the number of instance
+                    format: int32
+                    type: integer
                   smtp_host:
                     description: SMTPHost mail server smtp host
                     type: string
@@ -437,6 +487,7 @@ spec:
                 required:
                 - mail_server_host_email
                 - mail_server_host_email_secret
+                - size
                 - smtp_host
                 - smtp_port
                 - user
@@ -473,8 +524,13 @@ spec:
                           to an implementation-defined value. More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/'
                         type: object
                     type: object
+                  size:
+                    description: Size is the number of instance
+                    format: int32
+                    type: integer
                 required:
                 - enabled
+                - size
                 type: object
               version:
                 description: KlovercloudCD Version, default Latest. See available

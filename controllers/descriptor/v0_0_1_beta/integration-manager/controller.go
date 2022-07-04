@@ -75,6 +75,7 @@ func (i integrationManager) ModifyDeployment(namespace string, integrationManage
 			i.Deployment.Spec.Template.Spec.Containers[index].Resources = integrationManager.Resources
 		}
 	}
+	i.Deployment.Spec.Replicas=&integrationManager.Size
 	return i
 }
 

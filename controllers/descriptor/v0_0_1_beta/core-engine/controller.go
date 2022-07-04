@@ -59,6 +59,7 @@ func (c coreEngine) ModifyDeployment(namespace string, coreEngine v1alpha1.CoreE
 			c.Deployment.Spec.Template.Spec.Containers[index].Resources = coreEngine.Resources
 		}
 	}
+	c.Deployment.Spec.Replicas=&coreEngine.Size
 	return c
 }
 

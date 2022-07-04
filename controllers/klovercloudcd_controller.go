@@ -67,6 +67,10 @@ func (r *KlovercloudCDReconciler) Reconcile(ctx context.Context, req ctrl.Reques
 		return reconcile.Result{}, err
 	}
 	// TODO(user): your logic here
+
+	// Check if the deployment already exists, if not create a new one
+	// Ensure the deployment size is the same as the spec
+
 	// Apply prerequisites
 	err = descriptor.ApplyPrerequisites(r.Client, config.Namespace, config.Spec.Database, config.Spec.Security, string(config.Spec.Version))
 	if err != nil {
