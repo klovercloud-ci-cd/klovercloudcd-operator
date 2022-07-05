@@ -54,12 +54,10 @@ func (i integrationManager) ModifyConfigmap(namespace string, db v1alpha1.DB, in
 	}
 
 	KLOVERCLOUD_CI_CORE_URL := i.Configmap.Data["KLOVERCLOUD_CI_CORE_URL"]
-	replacedUrl := strings.ReplaceAll(KLOVERCLOUD_CI_CORE_URL, ".klovercloud.", "."+namespace+".")
-	i.Configmap.Data["KLOVERCLOUD_CI_CORE_URL"] = replacedUrl
+	i.Configmap.Data["KLOVERCLOUD_CI_CORE_URL"] = strings.ReplaceAll(KLOVERCLOUD_CI_CORE_URL, ".klovercloud.", "."+namespace+".")
 
 	EVENT_STORE_URL := i.Configmap.Data["EVENT_STORE_URL"]
-	replacedUrl = strings.ReplaceAll(EVENT_STORE_URL, ".klovercloud.", "."+namespace+".")
-	i.Configmap.Data["EVENT_STORE_URL"] = replacedUrl
+	i.Configmap.Data["EVENT_STORE_URL"] = strings.ReplaceAll(EVENT_STORE_URL, ".klovercloud.", "."+namespace+".")
 
 	return i
 }

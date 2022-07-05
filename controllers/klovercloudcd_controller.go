@@ -101,7 +101,10 @@ func (r *KlovercloudCDReconciler) Reconcile(ctx context.Context, req ctrl.Reques
 
 	existingSecurityServerConfigmap:=&corev1.ConfigMap{}
 	err = r.Get(ctx, types.NamespacedName{Name: "klovercloud-security-envar-config", Namespace: config.Namespace}, existingSecurityServerConfigmap)
-
+	if err != nil {
+		log.Error(err, "Failed to get klovercloud-mongo-secret.",err.Error())
+		return ctrl.Result{}, err
+	}
 	if existingSecurityServerConfigmap.Data["MAIL_SERVER_HOST_EMAIL"]!=config.Spec.Security.MailServerHostEmail{
 		redeploy=true
 		existingSecurityServerConfigmap.Data["MAIL_SERVER_HOST_EMAIL"]=config.Spec.Security.MailServerHostEmail
@@ -234,14 +237,126 @@ func (r *KlovercloudCDReconciler) Reconcile(ctx context.Context, req ctrl.Reques
 		}
 	}
 
+
     // **********************************************  Api Service Finished **************************************************************
 
 
+	// ********************************************** All About Integration Manager ****************************************************
+
+
+
 	// Apply integration manager
-	err = descriptor.ApplyIntegrationManager(r.Client, config.Namespace, config.Spec.Database, config.Spec.IntegrationManager, string(config.Spec.Version))
-	if err != nil {
+	// Check if the deployment already exists, if not create a new one
+	existingIntegrationManager := &appsv1.Deployment{}
+	err = r.Get(ctx, types.NamespacedName{Name: "klovercloud-integration-manager", Namespace: config.Namespace}, existingIntegrationManager)
+	if err != nil && errors.IsNotFound(err) {
+		// Define a new deployment
+		err = descriptor.ApplyIntegrationManager(r.Client, config.Namespace, config.Spec.Database, config.Spec.IntegrationManager, string(config.Spec.Version))
+		if err != nil {
+			log.Error(err, "Failed to create new Deployment", "Deployment.Namespace", config.Namespace, "Deployment.Name", "klovercloud-integration-manager")
+			return ctrl.Result{}, err
+		}
+		// Deployment created successfully - return and requeue
+		return ctrl.Result{Requeue: true}, nil
+	} else if err != nil {
+		log.Error(err, "Failed to get Deployment")
 		return ctrl.Result{}, err
 	}
+
+
+	existingIntegrationManagerConfigmap:=&corev1.ConfigMap{}
+	err = r.Get(ctx, types.NamespacedName{Name: "klovercloud-integration-manager-envar-config", Namespace: config.Namespace}, existingIntegrationManagerConfigmap)
+	if err != nil {
+		log.Error(err, "Failed to get klovercloud-integration-manager-envar-config.",err.Error())
+		return ctrl.Result{}, err
+	}
+	redeploy=false
+
+if existingIntegrationManagerConfigmap.Data["DEFAULT_PER_DAY_TOTAL_PROCESS"]!=config.Spec.IntegrationManager.PerDayTotalProcess{
+	redeploy=true
+	existingIntegrationManagerConfigmap.Data["DEFAULT_PER_DAY_TOTAL_PROCESS"]=config.Spec.IntegrationManager.PerDayTotalProcess
+}
+
+	if existingIntegrationManagerConfigmap.Data["DEFAULT_NUMBER_OF_CONCURRENT_PROCESS"]!=config.Spec.IntegrationManager.ConcurrentProcess{
+		redeploy=true
+		existingIntegrationManagerConfigmap.Data["DEFAULT_NUMBER_OF_CONCURRENT_PROCESS"]=config.Spec.IntegrationManager.ConcurrentProcess
+	}
+	if existingIntegrationManagerConfigmap.Data["GITHUB_WEBHOOK_CONSUMING_URL"]!=config.Spec.IntegrationManager.GithubWebhookConsumingUrl{
+		redeploy=true
+		existingIntegrationManagerConfigmap.Data["GITHUB_WEBHOOK_CONSUMING_URL"]=config.Spec.IntegrationManager.GithubWebhookConsumingUrl
+	}
+	if existingIntegrationManagerConfigmap.Data["GITHUB_WEBHOOK_CONSUMING_URL"]!=config.Spec.IntegrationManager.GithubWebhookConsumingUrl{
+		redeploy=true
+		existingIntegrationManagerConfigmap.Data["GITHUB_WEBHOOK_CONSUMING_URL"]=config.Spec.IntegrationManager.GithubWebhookConsumingUrl
+	}
+
+	if existingIntegrationManagerConfigmap.Data["BITBUCKET_WEBHOOK_CONSUMING_URL"]!=config.Spec.IntegrationManager.BitbucketWebhookConsumingUrl{
+		redeploy=true
+		existingIntegrationManagerConfigmap.Data["BITBUCKET_WEBHOOK_CONSUMING_URL"]=config.Spec.IntegrationManager.BitbucketWebhookConsumingUrl
+	}
+
+	if existingIntegrationManagerConfigmap.Data["BITBUCKET_WEBHOOK_CONSUMING_URL"]!=config.Spec.IntegrationManager.BitbucketWebhookConsumingUrl{
+		redeploy=true
+		existingIntegrationManagerConfigmap.Data["BITBUCKET_WEBHOOK_CONSUMING_URL"]=config.Spec.IntegrationManager.BitbucketWebhookConsumingUrl
+	}
+
+	if *existingIntegrationManager.Spec.Replicas != config.Spec.IntegrationManager.Size {
+		redeploy=true
+		existingIntegrationManager.Spec.Replicas = &config.Spec.IntegrationManager.Size
+	}
+
+
+	for i,each:= range existingIntegrationManager.Spec.Template.Spec.Containers{
+		if each.Name=="app"{
+			isRequestedResourcesChanged:=each.Resources.Requests.Cpu()!=config.Spec.IntegrationManager.Resources.Requests.Cpu() || each.Resources.Requests.Memory()!=config.Spec.IntegrationManager.Resources.Requests.Memory()
+			isLimitedRequestedChanged:=each.Resources.Limits.Cpu()!=config.Spec.IntegrationManager.Resources.Limits.Cpu() || each.Resources.Limits.Memory()!=config.Spec.IntegrationManager.Resources.Limits.Memory()
+
+			if isRequestedResourcesChanged || isLimitedRequestedChanged{
+				redeploy=true
+				existingIntegrationManager.Spec.Template.Spec.Containers[i].Resources=config.Spec.ApiService.Resources
+				break
+			}
+
+		}
+	}
+
+
+	if redeploy{
+		err = r.Update(ctx, existingIntegrationManager)
+		if err != nil {
+			log.Error(err, "Failed to update Deployment.", "Deployment.Namespace:", existingIntegrationManager.Namespace, "Deployment.Name:", existingIntegrationManager.Name)
+			return ctrl.Result{}, err
+		}
+		// Spec updated - return and requeue
+		return ctrl.Result{Requeue: true}, nil
+	}
+
+
+	// Update the ApiService status with the pod names
+	// List the pods for this api service's deployment
+	podList = &corev1.PodList{}
+	listOpts = []client.ListOption{
+		client.InNamespace(config.Namespace),
+		client.MatchingLabels(map[string]string{"app":"klovercloud-integration-manager"}),
+	}
+	if err = r.List(ctx, podList, listOpts...); err != nil {
+		log.Error(err, "Failed to list pods.", "IntegrationManager.Namespace:", config.Namespace, "IntegrationManager.Name:","klovercloud-integration-manager")
+		return ctrl.Result{}, err
+	}
+	podNames = getPodNames(podList.Items)
+
+	// Update status.Nodes if needed
+	if !reflect.DeepEqual(podNames, config.Status.IntegrationManagerPods) {
+		config.Status.IntegrationManagerPods = podNames
+		err := r.Status().Update(ctx, config)
+		if err != nil {
+			log.Error(err, "Failed to update IntegrationManager status")
+			return ctrl.Result{}, err
+		}
+	}
+
+	// ********************************************** Integration Manager Finished **************************************************************
+
 
 	// Apply event bank
 	err = descriptor.ApplyEventBank(r.Client, config.Namespace, config.Spec.Database, config.Spec.EventBank, string(config.Spec.Version))
