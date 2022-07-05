@@ -37,8 +37,7 @@ func (e eventBank) ModifyConfigmap(namespace string, db v1alpha1.DB) service.Eve
 	}
 
 	KLOVERCLOUD_CI_CORE_URL := e.Configmap.Data["KLOVERCLOUD_CI_CORE_URL"]
-	replacedUrl := strings.ReplaceAll(KLOVERCLOUD_CI_CORE_URL, ".klovercloud.", "."+namespace+".")
-	e.Configmap.Data["KLOVERCLOUD_CI_CORE_URL"] = replacedUrl
+	e.Configmap.Data["KLOVERCLOUD_CI_CORE_URL"] = strings.ReplaceAll(KLOVERCLOUD_CI_CORE_URL, ".klovercloud.", "."+namespace+".")
 
 	return e
 }

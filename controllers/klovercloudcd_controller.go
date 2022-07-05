@@ -243,8 +243,6 @@ func (r *KlovercloudCDReconciler) Reconcile(ctx context.Context, req ctrl.Reques
 
 	// ********************************************** All About Integration Manager ****************************************************
 
-
-
 	// Apply integration manager
 	// Check if the deployment already exists, if not create a new one
 	existingIntegrationManager := &appsv1.Deployment{}
@@ -272,10 +270,10 @@ func (r *KlovercloudCDReconciler) Reconcile(ctx context.Context, req ctrl.Reques
 	}
 	redeploy=false
 
-if existingIntegrationManagerConfigmap.Data["DEFAULT_PER_DAY_TOTAL_PROCESS"]!=config.Spec.IntegrationManager.PerDayTotalProcess{
-	redeploy=true
-	existingIntegrationManagerConfigmap.Data["DEFAULT_PER_DAY_TOTAL_PROCESS"]=config.Spec.IntegrationManager.PerDayTotalProcess
-}
+	if existingIntegrationManagerConfigmap.Data["DEFAULT_PER_DAY_TOTAL_PROCESS"]!=config.Spec.IntegrationManager.PerDayTotalProcess{
+		redeploy=true
+		existingIntegrationManagerConfigmap.Data["DEFAULT_PER_DAY_TOTAL_PROCESS"]=config.Spec.IntegrationManager.PerDayTotalProcess
+	}
 
 	if existingIntegrationManagerConfigmap.Data["DEFAULT_NUMBER_OF_CONCURRENT_PROCESS"]!=config.Spec.IntegrationManager.ConcurrentProcess{
 		redeploy=true
@@ -332,7 +330,7 @@ if existingIntegrationManagerConfigmap.Data["DEFAULT_PER_DAY_TOTAL_PROCESS"]!=co
 	}
 
 
-	// Update the ApiService status with the pod names
+	// Update the IntegrationManager status with the pod names
 	// List the pods for this api service's deployment
 	podList = &corev1.PodList{}
 	listOpts = []client.ListOption{
@@ -358,11 +356,82 @@ if existingIntegrationManagerConfigmap.Data["DEFAULT_PER_DAY_TOTAL_PROCESS"]!=co
 	// ********************************************** Integration Manager Finished **************************************************************
 
 
+	// ********************************************** All Event Bank ****************************************************
+
 	// Apply event bank
-	err = descriptor.ApplyEventBank(r.Client, config.Namespace, config.Spec.Database, config.Spec.EventBank, string(config.Spec.Version))
-	if err != nil {
+	// Check if the deployment already exists, if not create a new one
+	existingEventBank := &appsv1.Deployment{}
+	err = r.Get(ctx, types.NamespacedName{Name: "klovercloud-ci-event-bank", Namespace: config.Namespace}, existingEventBank)
+	if err != nil && errors.IsNotFound(err) {
+		// Define a new deployment
+		err = descriptor.ApplyEventBank(r.Client, config.Namespace, config.Spec.Database, config.Spec.EventBank, string(config.Spec.Version))
+		if err != nil {
+			log.Error(err, "Failed to create new Deployment", "Deployment.Namespace", config.Namespace, "Deployment.Name", "klovercloud-ci-event-bank")
+			return ctrl.Result{}, err
+		}
+		// Deployment created successfully - return and requeue
+		return ctrl.Result{Requeue: true}, nil
+	} else if err != nil {
+		log.Error(err, "Failed to get Deployment")
 		return ctrl.Result{}, err
 	}
+
+	if *existingEventBank.Spec.Replicas != config.Spec.EventBank.Size {
+		redeploy=true
+		existingEventBank.Spec.Replicas = &config.Spec.EventBank.Size
+	}
+
+
+	for i,each:= range existingEventBank.Spec.Template.Spec.Containers{
+		if each.Name=="app"{
+			isRequestedResourcesChanged:=each.Resources.Requests.Cpu()!=config.Spec.EventBank.Resources.Requests.Cpu() || each.Resources.Requests.Memory()!=config.Spec.EventBank.Resources.Requests.Memory()
+			isLimitedRequestedChanged:=each.Resources.Limits.Cpu()!=config.Spec.EventBank.Resources.Limits.Cpu() || each.Resources.Limits.Memory()!=config.Spec.EventBank.Resources.Limits.Memory()
+
+			if isRequestedResourcesChanged || isLimitedRequestedChanged{
+				redeploy=true
+				existingEventBank.Spec.Template.Spec.Containers[i].Resources=config.Spec.EventBank.Resources
+				break
+			}
+
+		}
+	}
+
+
+	if redeploy{
+		err = r.Update(ctx, existingEventBank)
+		if err != nil {
+			log.Error(err, "Failed to update Deployment.", "Deployment.Namespace:", existingEventBank.Namespace, "Deployment.Name:", existingEventBank.Name)
+			return ctrl.Result{}, err
+		}
+		// Spec updated - return and requeue
+		return ctrl.Result{Requeue: true}, nil
+	}
+
+
+	// Update the EventBank status with the pod names
+	// List the pods for this api service's deployment
+	podList = &corev1.PodList{}
+	listOpts = []client.ListOption{
+		client.InNamespace(config.Namespace),
+		client.MatchingLabels(map[string]string{"app":"klovercloud-ci-event-bank"}),
+	}
+	if err = r.List(ctx, podList, listOpts...); err != nil {
+		log.Error(err, "Failed to list pods.", "EventBank.Namespace:", config.Namespace, "EventBank.Name:","klovercloud-ci-event-bank")
+		return ctrl.Result{}, err
+	}
+	podNames = getPodNames(podList.Items)
+
+	// Update status.Nodes if needed
+	if !reflect.DeepEqual(podNames, config.Status.EventBankPods) {
+		config.Status.EventBankPods = podNames
+		err := r.Status().Update(ctx, config)
+		if err != nil {
+			log.Error(err, "Failed to update EventBank status")
+			return ctrl.Result{}, err
+		}
+	}
+
+	// ********************************************** Event Bank Finished **************************************************************
 
 	// Apply core engine
 
