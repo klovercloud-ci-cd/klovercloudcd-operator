@@ -23,6 +23,13 @@ type lightHouseQuery struct {
 	Error      error
 }
 
+func (l lightHouseQuery) Delete() error {
+	l.Client.Delete(context.Background(),&l.Service)
+	l.Client.Delete(context.Background(),&l.Deployment)
+	l.Client.Delete(context.Background(),&l.Configmap)
+	return nil
+}
+
 func (l lightHouseQuery) ModifyConfigmap(namespace string, db v1alpha1.DB) service.LightHouseQuery {
 	if l.Configmap.ObjectMeta.Labels == nil {
 		l.Configmap.ObjectMeta.Labels = make(map[string]string)

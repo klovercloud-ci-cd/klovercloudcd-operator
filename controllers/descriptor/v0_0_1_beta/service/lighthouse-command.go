@@ -10,4 +10,5 @@ type LightHouseCommand interface {
 	ApplyConfigMap() error
 	ApplyDeployment() error
 	ApplyService() error
+	Delete()error
 }

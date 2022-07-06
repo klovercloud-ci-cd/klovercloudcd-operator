@@ -10,4 +10,5 @@ type LightHouseQuery interface {
 	ApplyConfigMap() error
 	ApplyDeployment() error
 	ApplyService() error
+	Delete()error
 }

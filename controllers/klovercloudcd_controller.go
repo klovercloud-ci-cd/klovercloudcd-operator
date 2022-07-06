@@ -846,12 +846,138 @@ func (r *KlovercloudCDReconciler) Reconcile(ctx context.Context, req ctrl.Reques
 		// ********************************************** Lighthouse Query Finished **************************************************************
 	}
 
-	// Apply agent
-	err = descriptor.ApplyAgent(r.Client,r.Config, config.Namespace,config.Spec.Agent, string(config.Spec.Version))
-	if err != nil {
+
+	// ********************************************** All About Agent ***************************************************************
+	existingAgent := &appsv1.Deployment{}
+	err = r.Get(ctx, types.NamespacedName{Name: "klovercloud-ci-agent", Namespace: config.Namespace}, existingAgent)
+	if err != nil && errors.IsNotFound(err) {
+		// Define a new deployment
+		err = descriptor.ApplyAgent(r.Client,r.Config, config.Namespace,config.Spec.Agent, string(config.Spec.Version))
+		if err != nil {
+			log.Error(err, "Failed to create new Deployment", "Deployment.Namespace", config.Namespace, "Deployment.Name", "klovercloud-ci-agent")
+			return ctrl.Result{}, err
+		}
+		// Deployment created successfully - return and requeue
+		return ctrl.Result{Requeue: true}, nil
+	} else if err != nil {
+		log.Error(err, "Failed to get Deployment")
 		return ctrl.Result{}, err
 	}
 
+	existingAgentConfigmap:=&corev1.ConfigMap{}
+	err = r.Get(ctx, types.NamespacedName{Name: "klovercloud-ci-agent-envar-config", Namespace: config.Namespace}, existingAgentConfigmap)
+	if err != nil {
+		log.Error(err, "Failed to get klovercloud-ci-agent-envar-config.",err.Error())
+		return ctrl.Result{}, err
+	}
+
+	redeploy=false
+	redeployConfigmap=false
+	deployLightHouse:=false
+	downLightHouse:=false
+	if existingAgentConfigmap.Data["PULL_SIZE"]!=config.Spec.Agent.PullSize{
+		redeployConfigmap=true
+		existingAgentConfigmap.Data["PULL_SIZE"]=config.Spec.Agent.PullSize
+	}
+
+	if existingAgentConfigmap.Data["LIGHTHOUSE_ENABLED"]!=config.Spec.Agent.LightHouseEnabled{
+		if config.Spec.Agent.LightHouseEnabled=="false"{
+			downLightHouse=true
+		}else{
+			deployLightHouse=true
+		}
+		redeployConfigmap=true
+		existingAgentConfigmap.Data["LIGHTHOUSE_ENABLED"]=config.Spec.Agent.LightHouseEnabled
+	}
+
+	if existingAgentConfigmap.Data["TERMINAL_BASE_URL"]!=config.Spec.Agent.TerminalBaseUrl{
+		redeployConfigmap=true
+		existingAgentConfigmap.Data["TERMINAL_BASE_URL"]=config.Spec.Agent.TerminalBaseUrl
+	}
+	if existingAgentConfigmap.Data["TERMINAL_API_VERSION"]!=config.Spec.Agent.TerminalApiVersion{
+		redeployConfigmap=true
+		existingAgentConfigmap.Data["TERMINAL_API_VERSION"]=config.Spec.Agent.TerminalApiVersion
+	}
+
+	for i,each:= range existingAgent.Spec.Template.Spec.Containers{
+		if each.Name=="app"{
+			isRequestedResourcesChanged:=each.Resources.Requests.Cpu()!=config.Spec.Agent.Resources.Requests.Cpu() || each.Resources.Requests.Memory()!=config.Spec.Agent.Resources.Requests.Memory()
+			isLimitedRequestedChanged:=each.Resources.Limits.Cpu()!=config.Spec.Agent.Resources.Limits.Cpu() || each.Resources.Limits.Memory()!=config.Spec.Agent.Resources.Limits.Memory()
+
+			if isRequestedResourcesChanged || isLimitedRequestedChanged{
+				redeploy=true
+				existingAgent.Spec.Template.Spec.Containers[i].Resources=config.Spec.Agent.Resources
+				break
+			}
+
+		}
+	}
+	if redeployConfigmap{
+		err = r.Update(ctx, existingAgentConfigmap)
+		if err != nil {
+			log.Error(err, "Failed to update Configmap.", "Namespace:", existingAgent.Namespace, "Name:", existingAgent.Name)
+			return ctrl.Result{}, err
+		}
+	}
+
+	if deployLightHouse{
+		err=descriptor.ApplyLightHouseCommand(r.Client,config.Namespace,config.Spec.Database,config.Spec.LightHouse.Command,string(config.Spec.Version))
+		if err != nil {
+			log.Error(err, "Failed to create new Deployment", "Deployment.Namespace", config.Namespace, "Deployment.Name", "klovercloud-ci-light-house-command")
+			return ctrl.Result{}, err
+		}
+		err=descriptor.ApplyLightHouseQuery(r.Client,config.Namespace,config.Spec.Database,config.Spec.LightHouse.Query,string(config.Spec.Version))
+		if err != nil {
+			log.Error(err, "Failed to create new Deployment", "Deployment.Namespace", config.Namespace, "Deployment.Name", "klovercloud-ci-light-house-query")
+			return ctrl.Result{}, err
+		}
+	}
+
+	if downLightHouse{
+		err:=descriptor.DeleteLightHouseCommand(r.Client,string(config.Spec.Version))
+		if err!=nil {
+			log.Error(err, err.Error())
+		}
+		err=descriptor.DeleteLightHouseQuery(r.Client,string(config.Spec.Version))
+		if err!=nil {
+			log.Error(err, err.Error())
+		}
+	}
+	if redeploy{
+		err = r.Update(ctx, existingAgent)
+		if err != nil {
+			log.Error(err, "Failed to update Deployment.", "Deployment.Namespace:", existingAgent.Namespace, "Deployment.Name:", existingAgent.Name)
+			return ctrl.Result{}, err
+		}
+		// Spec updated - return and requeue
+		return ctrl.Result{Requeue: true}, nil
+	}
+
+
+	// Update the agent status with the pod names
+	// List the pods for this api service's deployment
+	podList = &corev1.PodList{}
+	listOpts = []client.ListOption{
+		client.InNamespace(config.Namespace),
+		client.MatchingLabels(map[string]string{"app":"klovercloud-ci-agent"}),
+	}
+	if err = r.List(ctx, podList, listOpts...); err != nil {
+		log.Error(err, "Failed to list pods.", "Agent.Namespace:", config.Namespace, "Agent.Name:","klovercloud-ci-agent")
+		return ctrl.Result{}, err
+	}
+	podNames = getPodNames(podList.Items)
+
+	// Update status.Nodes if needed
+	if !reflect.DeepEqual(podNames, config.Status.ApiServicePods) {
+		config.Status.ApiServicePods = podNames
+		err := r.Status().Update(ctx, config)
+		if err != nil {
+			log.Error(err, "Failed to update AgentPods status")
+			return ctrl.Result{}, err
+		}
+	}
+
+	// ********************************************** Agent Finished **************************************************************
 
 
 	return ctrl.Result{}, nil
