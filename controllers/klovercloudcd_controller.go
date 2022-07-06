@@ -285,30 +285,41 @@ func (r *KlovercloudCDReconciler) Reconcile(ctx context.Context, req ctrl.Reques
 		log.Error(err, "Failed to get klovercloud-integration-manager-envar-config.",err.Error())
 		return ctrl.Result{}, err
 	}
+	redeployConfigmap:=false
 	redeploy=false
 
+	if existingIntegrationManagerConfigmap.Data["MONGO_SERVER"]!=config.Spec.Database.ServerURL{
+		redeployConfigmap=true
+		existingIntegrationManagerConfigmap.Data["MONGO_SERVER"]=config.Spec.Database.ServerURL
+	}
+
+	if existingIntegrationManagerConfigmap.Data["MONGO_PORT"]!=config.Spec.Database.ServerPort{
+		redeployConfigmap=true
+		existingIntegrationManagerConfigmap.Data["MONGO_PORT"]=config.Spec.Database.ServerPort
+	}
+
 	if existingIntegrationManagerConfigmap.Data["DEFAULT_PER_DAY_TOTAL_PROCESS"]!=config.Spec.IntegrationManager.PerDayTotalProcess{
-		redeploy=true
+		redeployConfigmap=true
 		existingIntegrationManagerConfigmap.Data["DEFAULT_PER_DAY_TOTAL_PROCESS"]=config.Spec.IntegrationManager.PerDayTotalProcess
 	}
 	if existingIntegrationManagerConfigmap.Data["DEFAULT_NUMBER_OF_CONCURRENT_PROCESS"]!=config.Spec.IntegrationManager.ConcurrentProcess{
-		redeploy=true
+		redeployConfigmap=true
 		existingIntegrationManagerConfigmap.Data["DEFAULT_NUMBER_OF_CONCURRENT_PROCESS"]=config.Spec.IntegrationManager.ConcurrentProcess
 	}
 	if existingIntegrationManagerConfigmap.Data["GITHUB_WEBHOOK_CONSUMING_URL"]!=config.Spec.IntegrationManager.GithubWebhookConsumingUrl{
-		redeploy=true
+		redeployConfigmap=true
 		existingIntegrationManagerConfigmap.Data["GITHUB_WEBHOOK_CONSUMING_URL"]=config.Spec.IntegrationManager.GithubWebhookConsumingUrl
 	}
 	if existingIntegrationManagerConfigmap.Data["GITHUB_WEBHOOK_CONSUMING_URL"]!=config.Spec.IntegrationManager.GithubWebhookConsumingUrl{
-		redeploy=true
+		redeployConfigmap=true
 		existingIntegrationManagerConfigmap.Data["GITHUB_WEBHOOK_CONSUMING_URL"]=config.Spec.IntegrationManager.GithubWebhookConsumingUrl
 	}
 	if existingIntegrationManagerConfigmap.Data["BITBUCKET_WEBHOOK_CONSUMING_URL"]!=config.Spec.IntegrationManager.BitbucketWebhookConsumingUrl{
-		redeploy=true
+		redeployConfigmap=true
 		existingIntegrationManagerConfigmap.Data["BITBUCKET_WEBHOOK_CONSUMING_URL"]=config.Spec.IntegrationManager.BitbucketWebhookConsumingUrl
 	}
 	if existingIntegrationManagerConfigmap.Data["BITBUCKET_WEBHOOK_CONSUMING_URL"]!=config.Spec.IntegrationManager.BitbucketWebhookConsumingUrl{
-		redeploy=true
+		redeployConfigmap=true
 		existingIntegrationManagerConfigmap.Data["BITBUCKET_WEBHOOK_CONSUMING_URL"]=config.Spec.IntegrationManager.BitbucketWebhookConsumingUrl
 	}
 	if *existingIntegrationManager.Spec.Replicas != config.Spec.IntegrationManager.Size {
@@ -331,13 +342,14 @@ func (r *KlovercloudCDReconciler) Reconcile(ctx context.Context, req ctrl.Reques
 		}
 	}
 
-	if redeploy{
-
+	if redeployConfigmap{
 		err = r.Update(ctx, existingIntegrationManagerConfigmap)
 		if err != nil {
 			log.Error(err, "Failed to update Configmap.", "Namespace:", existingIntegrationManagerConfigmap.Namespace, "Name:", existingIntegrationManagerConfigmap.Name)
 			return ctrl.Result{}, err
 		}
+	}
+	if redeploy{
 		err = r.Update(ctx, existingIntegrationManager)
 		if err != nil {
 			log.Error(err, "Failed to update Deployment.", "Deployment.Namespace:", existingIntegrationManager.Namespace, "Deployment.Name:", existingIntegrationManager.Name)
@@ -393,7 +405,26 @@ func (r *KlovercloudCDReconciler) Reconcile(ctx context.Context, req ctrl.Reques
 		return ctrl.Result{}, err
 	}
 
+
+	existingEventBankConfigmap:=&corev1.ConfigMap{}
+	err = r.Get(ctx, types.NamespacedName{Name: "klovercloud-ci-event-bank-envar-config", Namespace: config.Namespace}, existingEventBankConfigmap)
+	if err != nil {
+		log.Error(err, "Failed to get klovercloud-ci-event-bank-envar-config.",err.Error())
+		return ctrl.Result{}, err
+	}
+
 	redeploy=false
+	redeployConfigmap=false
+	if existingEventBankConfigmap.Data["MONGO_SERVER"]!=config.Spec.Database.ServerURL{
+		redeployConfigmap=true
+		existingEventBankConfigmap.Data["MONGO_SERVER"]=config.Spec.Database.ServerURL
+	}
+
+	if existingEventBankConfigmap.Data["MONGO_PORT"]!=config.Spec.Database.ServerPort{
+		redeployConfigmap=true
+		existingEventBankConfigmap.Data["MONGO_PORT"]=config.Spec.Database.ServerPort
+	}
+
 	if *existingEventBank.Spec.Replicas != config.Spec.EventBank.Size {
 		redeploy=true
 		existingEventBank.Spec.Replicas = &config.Spec.EventBank.Size
@@ -413,7 +444,13 @@ func (r *KlovercloudCDReconciler) Reconcile(ctx context.Context, req ctrl.Reques
 
 		}
 	}
-
+	if redeployConfigmap{
+		err = r.Update(ctx, existingEventBankConfigmap)
+		if err != nil {
+			log.Error(err, "Failed to update Configmap.", "Namespace:", existingEventBankConfigmap.Namespace, "Name:", existingEventBankConfigmap.Name)
+			return ctrl.Result{}, err
+		}
+	}
 
 	if redeploy{
 		err = r.Update(ctx, existingEventBank)
@@ -519,7 +556,7 @@ func (r *KlovercloudCDReconciler) Reconcile(ctx context.Context, req ctrl.Reques
 		return ctrl.Result{Requeue: true}, nil
 	}
 
-	// Update the IntegrationManager status with the pod names
+	// Update the CoreEngine status with the pod names
 	// List the pods for this api service's deployment
 	podList = &corev1.PodList{}
 	listOpts = []client.ListOption{
@@ -579,7 +616,7 @@ func (r *KlovercloudCDReconciler) Reconcile(ctx context.Context, req ctrl.Reques
 		return ctrl.Result{Requeue: true}, nil
 	}
 
-	// Update the IntegrationManager status with the pod names
+	// Update the Security status with the pod names
 	// List the pods for this api service's deployment
 	podList = &corev1.PodList{}
 	listOpts = []client.ListOption{
@@ -606,11 +643,109 @@ func (r *KlovercloudCDReconciler) Reconcile(ctx context.Context, req ctrl.Reques
 
 	// Apply lighthouse
 	if config.Spec.Agent.LightHouseEnabled=="true"{
-		// Apply lighthouse command
-		err=descriptor.ApplyLightHouseCommand(r.Client,config.Namespace,config.Spec.Database,config.Spec.LightHouse.Command,string(config.Spec.Version))
-		if err != nil {
+
+
+		// ********************************************** All About Lighthouse Command ***************************************************************
+		existingLightHouseCommand := &appsv1.Deployment{}
+		err = r.Get(ctx, types.NamespacedName{Name: "klovercloud-ci-light-house-command", Namespace: config.Namespace}, existingLightHouseCommand)
+		if err != nil && errors.IsNotFound(err) {
+			// Define a new deployment
+			err=descriptor.ApplyLightHouseCommand(r.Client,config.Namespace,config.Spec.Database,config.Spec.LightHouse.Command,string(config.Spec.Version))
+			if err != nil {
+				log.Error(err, "Failed to create new Deployment", "Deployment.Namespace", config.Namespace, "Deployment.Name", "klovercloud-ci-light-house-command")
+				return ctrl.Result{}, err
+			}
+			// Deployment created successfully - return and requeue
+			return ctrl.Result{Requeue: true}, nil
+		} else if err != nil {
+			log.Error(err, "Failed to get Deployment")
 			return ctrl.Result{}, err
 		}
+
+		existingLightHouseCommandConfigmap:=&corev1.ConfigMap{}
+		err = r.Get(ctx, types.NamespacedName{Name: "klovercloud-ci-light-house-command-config", Namespace: config.Namespace}, existingLightHouseCommandConfigmap)
+		if err != nil {
+			log.Error(err, "Failed to get klovercloud-ci-light-house-command-config.",err.Error())
+			return ctrl.Result{}, err
+		}
+
+		redeploy=false
+		redeployConfigmap=false
+		if existingLightHouseCommandConfigmap.Data["MONGO_SERVER"]!=config.Spec.Database.ServerURL{
+			redeployConfigmap=true
+			existingLightHouseCommandConfigmap.Data["MONGO_SERVER"]=config.Spec.Database.ServerURL
+		}
+
+		if existingLightHouseCommandConfigmap.Data["MONGO_PORT"]!=config.Spec.Database.ServerPort{
+			redeployConfigmap=true
+			existingLightHouseCommandConfigmap.Data["MONGO_PORT"]=config.Spec.Database.ServerPort
+		}
+
+		if *existingLightHouseCommand.Spec.Replicas != config.Spec.LightHouse.Command.Size {
+			redeploy=true
+			existingLightHouseCommand.Spec.Replicas = &config.Spec.LightHouse.Command.Size
+		}
+
+
+		for i,each:= range existingLightHouseCommand.Spec.Template.Spec.Containers{
+			if each.Name=="app"{
+				isRequestedResourcesChanged:=each.Resources.Requests.Cpu()!=config.Spec.LightHouse.Command.Resources.Requests.Cpu() || each.Resources.Requests.Memory()!=config.Spec.LightHouse.Command.Resources.Requests.Memory()
+				isLimitedRequestedChanged:=each.Resources.Limits.Cpu()!=config.Spec.LightHouse.Command.Resources.Limits.Cpu() || each.Resources.Limits.Memory()!=config.Spec.LightHouse.Command.Resources.Limits.Memory()
+
+				if isRequestedResourcesChanged || isLimitedRequestedChanged{
+					redeploy=true
+					existingLightHouseCommand.Spec.Template.Spec.Containers[i].Resources=config.Spec.LightHouse.Command.Resources
+					break
+				}
+
+			}
+		}
+		if redeployConfigmap{
+			err = r.Update(ctx, existingLightHouseCommand)
+			if err != nil {
+				log.Error(err, "Failed to update Configmap.", "Namespace:", existingLightHouseCommand.Namespace, "Name:", existingLightHouseCommand.Name)
+				return ctrl.Result{}, err
+			}
+		}
+
+		if redeploy{
+			err = r.Update(ctx, existingLightHouseCommand)
+			if err != nil {
+				log.Error(err, "Failed to update Deployment.", "Deployment.Namespace:", existingLightHouseCommand.Namespace, "Deployment.Name:", existingLightHouseCommand.Name)
+				return ctrl.Result{}, err
+			}
+			// Spec updated - return and requeue
+			return ctrl.Result{Requeue: true}, nil
+		}
+
+
+		// Update the LightHouseCommand status with the pod names
+		// List the pods for this api service's deployment
+		podList = &corev1.PodList{}
+		listOpts = []client.ListOption{
+			client.InNamespace(config.Namespace),
+			client.MatchingLabels(map[string]string{"app":"klovercloud-ci-light-house-command"}),
+		}
+		if err = r.List(ctx, podList, listOpts...); err != nil {
+			log.Error(err, "Failed to list pods.", "LightHouseCommand.Namespace:", config.Namespace, "LightHouseCommand.Name:","klovercloud-ci-light-house-command")
+			return ctrl.Result{}, err
+		}
+		podNames = getPodNames(podList.Items)
+
+		// Update status.Nodes if needed
+		if !reflect.DeepEqual(podNames, config.Status.LightHouseCommandPods) {
+			config.Status.EventBankPods = podNames
+			err := r.Status().Update(ctx, config)
+			if err != nil {
+				log.Error(err, "Failed to update LightHouseCommandPod status")
+				return ctrl.Result{}, err
+			}
+		}
+
+
+		// ********************************************** Lighthouse Command Finished **************************************************************
+
+
 		// Apply lighthouse query
 		err=descriptor.ApplyLightHouseQuery(r.Client,config.Namespace,config.Spec.Database,config.Spec.LightHouse.Query,string(config.Spec.Version))
 		if err != nil {
