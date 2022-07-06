@@ -746,11 +746,104 @@ func (r *KlovercloudCDReconciler) Reconcile(ctx context.Context, req ctrl.Reques
 		// ********************************************** Lighthouse Command Finished **************************************************************
 
 
-		// Apply lighthouse query
-		err=descriptor.ApplyLightHouseQuery(r.Client,config.Namespace,config.Spec.Database,config.Spec.LightHouse.Query,string(config.Spec.Version))
-		if err != nil {
+		// ********************************************** All About Lighthouse Query ***************************************************************
+		existingLightHouseQuery := &appsv1.Deployment{}
+		err = r.Get(ctx, types.NamespacedName{Name: "klovercloud-ci-light-house-query", Namespace: config.Namespace}, existingLightHouseQuery)
+		if err != nil && errors.IsNotFound(err) {
+			// Define a new deployment
+			err=descriptor.ApplyLightHouseQuery(r.Client,config.Namespace,config.Spec.Database,config.Spec.LightHouse.Query,string(config.Spec.Version))
+			if err != nil {
+				log.Error(err, "Failed to create new Deployment", "Deployment.Namespace", config.Namespace, "Deployment.Name", "klovercloud-ci-light-house-query")
+				return ctrl.Result{}, err
+			}
+			// Deployment created successfully - return and requeue
+			return ctrl.Result{Requeue: true}, nil
+		} else if err != nil {
+			log.Error(err, "Failed to get Deployment")
 			return ctrl.Result{}, err
 		}
+
+		existingLightHouseQueryConfigmap:=&corev1.ConfigMap{}
+		err = r.Get(ctx, types.NamespacedName{Name: "klovercloud-ci-light-house-query-config", Namespace: config.Namespace}, existingLightHouseQueryConfigmap)
+		if err != nil {
+			log.Error(err, "Failed to get klovercloud-ci-light-house-query-config.",err.Error())
+			return ctrl.Result{}, err
+		}
+
+		redeploy=false
+		redeployConfigmap=false
+		if existingLightHouseQueryConfigmap.Data["MONGO_SERVER"]!=config.Spec.Database.ServerURL{
+			redeployConfigmap=true
+			existingLightHouseQueryConfigmap.Data["MONGO_SERVER"]=config.Spec.Database.ServerURL
+		}
+
+		if existingLightHouseQueryConfigmap.Data["MONGO_PORT"]!=config.Spec.Database.ServerPort{
+			redeployConfigmap=true
+			existingLightHouseQueryConfigmap.Data["MONGO_PORT"]=config.Spec.Database.ServerPort
+		}
+
+		if *existingLightHouseQuery.Spec.Replicas != config.Spec.LightHouse.Query.Size {
+			redeploy=true
+			existingLightHouseQuery.Spec.Replicas = &config.Spec.LightHouse.Query.Size
+		}
+
+
+		for i,each:= range existingLightHouseQuery.Spec.Template.Spec.Containers{
+			if each.Name=="app"{
+				isRequestedResourcesChanged:=each.Resources.Requests.Cpu()!=config.Spec.LightHouse.Query.Resources.Requests.Cpu() || each.Resources.Requests.Memory()!=config.Spec.LightHouse.Query.Resources.Requests.Memory()
+				isLimitedRequestedChanged:=each.Resources.Limits.Cpu()!=config.Spec.LightHouse.Query.Resources.Limits.Cpu() || each.Resources.Limits.Memory()!=config.Spec.LightHouse.Query.Resources.Limits.Memory()
+
+				if isRequestedResourcesChanged || isLimitedRequestedChanged{
+					redeploy=true
+					existingLightHouseQuery.Spec.Template.Spec.Containers[i].Resources=config.Spec.LightHouse.Query.Resources
+					break
+				}
+
+			}
+		}
+		if redeployConfigmap{
+			err = r.Update(ctx, existingLightHouseQuery)
+			if err != nil {
+				log.Error(err, "Failed to update Configmap.", "Namespace:", existingLightHouseQuery.Namespace, "Name:", existingLightHouseQuery.Name)
+				return ctrl.Result{}, err
+			}
+		}
+
+		if redeploy{
+			err = r.Update(ctx, existingLightHouseQuery)
+			if err != nil {
+				log.Error(err, "Failed to update Deployment.", "Deployment.Namespace:", existingLightHouseQuery.Namespace, "Deployment.Name:", existingLightHouseQuery.Name)
+				return ctrl.Result{}, err
+			}
+			// Spec updated - return and requeue
+			return ctrl.Result{Requeue: true}, nil
+		}
+
+
+		// Update the LightHouseQuery status with the pod names
+		// List the pods for this api service's deployment
+		podList = &corev1.PodList{}
+		listOpts = []client.ListOption{
+			client.InNamespace(config.Namespace),
+			client.MatchingLabels(map[string]string{"app":"klovercloud-ci-light-house-query"}),
+		}
+		if err = r.List(ctx, podList, listOpts...); err != nil {
+			log.Error(err, "Failed to list pods.", "LightHouseQuery.Namespace:", config.Namespace, "LightHouseQuery.Name:","klovercloud-ci-light-house-query")
+			return ctrl.Result{}, err
+		}
+		podNames = getPodNames(podList.Items)
+
+		// Update status.Nodes if needed
+		if !reflect.DeepEqual(podNames, config.Status.LightHouseQueryPods) {
+			config.Status.LightHouseQueryPods = podNames
+			err := r.Status().Update(ctx, config)
+			if err != nil {
+				log.Error(err, "Failed to update LightHouseQueryPod status")
+				return ctrl.Result{}, err
+			}
+		}
+
+		// ********************************************** Lighthouse Query Finished **************************************************************
 	}
 
 	// Apply agent
