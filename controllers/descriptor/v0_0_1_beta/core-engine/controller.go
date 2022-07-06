@@ -15,6 +15,7 @@ import (
 	"k8s.io/client-go/kubernetes/scheme"
 	"log"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"strconv"
 	"strings"
 )
 
@@ -29,7 +30,7 @@ type coreEngine struct {
 	Error              error
 }
 
-func (c coreEngine) ModifyConfigmap(namespace string, db v1alpha1.DB) service.CoreEngine {
+func (c coreEngine) ModifyConfigmap(namespace string,coreEngine v1alpha1.CoreEngine, db v1alpha1.DB) service.CoreEngine {
 	if c.ConfigMap.ObjectMeta.Labels == nil {
 		c.ConfigMap.ObjectMeta.Labels = make(map[string]string)
 	}
@@ -41,6 +42,10 @@ func (c coreEngine) ModifyConfigmap(namespace string, db v1alpha1.DB) service.Co
 		c.ConfigMap.Data["MONGO_PORT"] = db.ServerPort
 	}
 
+	if coreEngine.NumberOfConCurrentProcess==0{
+		coreEngine.NumberOfConCurrentProcess=5
+	}
+	c.ConfigMap.Data["ALLOWED_CONCURRENT_BUILD"]=strconv.Itoa(coreEngine.NumberOfConCurrentProcess)
 	EVENT_STORE_URL := c.ConfigMap.Data["EVENT_STORE_URL"]
 	replacedUrl := strings.ReplaceAll(EVENT_STORE_URL, ".klovercloud.", "."+namespace+".")
 	c.ConfigMap.Data["EVENT_STORE_URL"] = replacedUrl

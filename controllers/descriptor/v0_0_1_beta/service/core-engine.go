@@ -3,7 +3,7 @@ package service
 import "github.com/klovercloud-ci-cd/klovercloudcd-operator/api/v1alpha1"
 
 type CoreEngine interface {
-	ModifyConfigmap(namespace string, db v1alpha1.DB) CoreEngine
+	ModifyConfigmap(namespace string,coreEngine v1alpha1.CoreEngine, db v1alpha1.DB) CoreEngine
 	ModifyDeployment(namespace string, coreEngine v1alpha1.CoreEngine) CoreEngine
 	ModifyService(namespace string) CoreEngine
 	ModifyClusterRole(namespace string) CoreEngine

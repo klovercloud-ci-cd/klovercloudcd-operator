@@ -134,6 +134,10 @@ type CoreEngine struct {
 	// Size is the number of instance
 	Size int32 `json:"size"`
 
+
+	// NumberOfConCurrentProcess is the number of concurrent jobs for (build,jenkins,intermediary)
+	NumberOfConCurrentProcess int `json:"number_of_con_current_process"`
+
 	// Resources defines cpu, memory requests and limits
 	Resources corev1.ResourceRequirements `json:"resources,omitempty" protobuf:"bytes,8,opt,name=resources"`
 }
