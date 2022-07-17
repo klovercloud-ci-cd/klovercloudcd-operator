@@ -25,7 +25,7 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/rest"
 	"reflect"
-	"sigs.k8s.io/controller-runtime/pkg/reconcile"
+	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"strconv"
 
 	"k8s.io/apimachinery/pkg/runtime"
@@ -65,11 +65,11 @@ func (r *KlovercloudCDReconciler) Reconcile(ctx context.Context, req ctrl.Reques
 			// Request object not found, could have been deleted after reconcile request.
 			// Owned objects are automatically garbage collected. For additional cleanup logic use finalizers.
 			// Return and don't requeue
-			return reconcile.Result{}, nil
+			return ctrl.Result{}, nil
 		}
 		// Error reading the object - requeue the request.
 		log.Error(err, " Error reading the object - requeue the request")
-		return reconcile.Result{}, err
+		return ctrl.Result{}, err
 	}
 	// TODO(user): your logic here
 
@@ -972,5 +972,10 @@ func getPodNames(pods []corev1.Pod) []string {
 func (r *KlovercloudCDReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&basev1alpha1.KlovercloudCD{}).
+		Owns(&corev1.ConfigMap{}).
+		Owns(&corev1.Pod{}).
+		Owns(&appsv1.Deployment{}).
+		Owns(&corev1.Service{}).
+		WithOptions(controller.Options{MaxConcurrentReconciles: 5}).
 		Complete(r)
 }

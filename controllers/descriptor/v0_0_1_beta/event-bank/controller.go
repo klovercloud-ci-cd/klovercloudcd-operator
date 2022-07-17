@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/klovercloud-ci-cd/klovercloudcd-operator/api/v1alpha1"
+	"github.com/klovercloud-ci-cd/klovercloudcd-operator/controllers"
 	"github.com/klovercloud-ci-cd/klovercloudcd-operator/controllers/descriptor/v0_0_1_beta/service"
 	"github.com/klovercloud-ci-cd/klovercloudcd-operator/controllers/descriptor/v0_0_1_beta/utility"
 	"github.com/klovercloud-ci-cd/klovercloudcd-operator/enums"
@@ -12,8 +13,11 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/client-go/kubernetes/scheme"
 	"log"
+	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"strings"
+
+	basev1alpha1 "github.com/klovercloud-ci-cd/klovercloudcd-operator/api/v1alpha1"
 )
 
 type eventBank struct {
@@ -53,7 +57,7 @@ func (e eventBank) ModifyDeployment(namespace string, eventBank v1alpha1.EventBa
 			e.Deployment.Spec.Template.Spec.Containers[index].Resources = eventBank.Resources
 		}
 	}
-	e.Deployment.Spec.Replicas=&eventBank.Size
+	e.Deployment.Spec.Replicas = &eventBank.Size
 	return e
 }
 
@@ -70,6 +74,10 @@ func (e eventBank) Apply(wait bool) error {
 	if e.Error != nil {
 		return e.Error
 	}
+
+	config := &basev1alpha1.KlovercloudCD{}
+
+	ctrl.SetControllerReference(config, &e.Configmap, controllers.KlovercloudCDReconciler{}.Scheme)
 	err := e.ApplyConfigMap()
 	if err != nil {
 		log.Println("[ERROR]: Failed to create configmap for event bank service.", "Deployment.Namespace", e.Deployment.Namespace, "Deployment.Name", e.Deployment.Name, err.Error())
@@ -91,6 +99,7 @@ func (e eventBank) Apply(wait bool) error {
 		}
 	}
 
+	ctrl.SetControllerReference(config, &e.Deployment, controllers.KlovercloudCDReconciler{}.Scheme)
 	err = e.ApplyDeployment()
 	if err != nil {
 		log.Println("[ERROR]: Failed to apply deployment for event bank service.", "Deployment.Namespace: ", e.Deployment.Namespace, " Deployment.Name: ", e.Deployment.Name+". ", err.Error())
@@ -102,6 +111,8 @@ func (e eventBank) Apply(wait bool) error {
 			return err
 		}
 	}
+
+	ctrl.SetControllerReference(config, &e.Service, controllers.KlovercloudCDReconciler{}.Scheme)
 	err = e.ApplyService()
 	if err != nil {
 		log.Println("[ERROR]: Failed to apply service for event bank service.", "Deployment.Namespace: ", e.Deployment.Namespace, " Deployment.Name: ", e.Deployment.Name+". ", err.Error())

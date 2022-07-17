@@ -23,6 +23,7 @@ import (
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
+	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	"reflect"
@@ -169,5 +170,10 @@ func (r *ExternalAgentReconciler) Reconcile(ctx context.Context, req ctrl.Reques
 func (r *ExternalAgentReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&basev1alpha1.ExternalAgent{}).
+		Owns(&corev1.ConfigMap{}).
+		Owns(&corev1.Pod{}).
+		Owns(&appsv1.Deployment{}).
+		Owns(&corev1.Service{}).
+		WithOptions(controller.Options{MaxConcurrentReconciles: 5}).
 		Complete(r)
 }

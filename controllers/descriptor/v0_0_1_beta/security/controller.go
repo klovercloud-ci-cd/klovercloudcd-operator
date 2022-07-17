@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/klovercloud-ci-cd/klovercloudcd-operator/api/v1alpha1"
+	"github.com/klovercloud-ci-cd/klovercloudcd-operator/controllers"
 	"github.com/klovercloud-ci-cd/klovercloudcd-operator/controllers/descriptor/v0_0_1_beta/service"
 	"github.com/klovercloud-ci-cd/klovercloudcd-operator/controllers/descriptor/v0_0_1_beta/utility"
 	"io/ioutil"
@@ -12,8 +13,11 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/client-go/kubernetes/scheme"
 	"log"
+	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"time"
+
+	basev1alpha1 "github.com/klovercloud-ci-cd/klovercloudcd-operator/api/v1alpha1"
 )
 
 type security struct {
@@ -32,10 +36,6 @@ func (s security) ModifyService(namespace string) service.Security {
 	return s
 }
 
-func (s security) ApplyService() error {
-	return s.Client.Create(context.Background(), &s.Service)
-}
-
 func (s security) ModifyDeployment(namespace string, security v1alpha1.Security) service.Security {
 	if s.Deployment.ObjectMeta.Labels == nil {
 		s.Deployment.ObjectMeta.Labels = make(map[string]string)
@@ -47,7 +47,7 @@ func (s security) ModifyDeployment(namespace string, security v1alpha1.Security)
 			s.Deployment.Spec.Template.Spec.Containers[index].Resources = security.Resources
 		}
 	}
-	s.Deployment.Spec.Replicas=&security.Size
+	s.Deployment.Spec.Replicas = &security.Size
 	return s
 }
 
@@ -101,6 +101,10 @@ func (s security) Apply(wait bool) error {
 			existingPodMap[each.Name] = true
 		}
 	}
+
+	config := &basev1alpha1.KlovercloudCD{}
+
+	ctrl.SetControllerReference(config, &s.Deployment, controllers.KlovercloudCDReconciler{}.Scheme)
 	err := s.ApplyDeployment()
 	if err != nil {
 		log.Println("[ERROR]: Failed to apply deployment for security service.", "Deployment.Namespace: ", s.Deployment.Namespace, " Deployment.Name: ", s.Deployment.Name+". ", err.Error())
@@ -112,6 +116,8 @@ func (s security) Apply(wait bool) error {
 			return err
 		}
 	}
+
+	ctrl.SetControllerReference(config, &s.Service, controllers.KlovercloudCDReconciler{}.Scheme)
 	err = s.ApplyService()
 	if err != nil {
 		log.Println("[ERROR]: Failed to apply service for security service.", "Deployment.Namespace: ", s.Deployment.Namespace, " Deployment.Name: ", s.Deployment.Name+". ", err.Error())
@@ -168,6 +174,10 @@ func (s security) WaitUntilPodsAreReady(existingPods map[string]bool, listOption
 		}
 	}
 	return nil
+}
+
+func (s security) ApplyService() error {
+	return s.Client.Create(context.Background(), &s.Service)
 }
 
 func (s security) ApplyDeployment() error {
