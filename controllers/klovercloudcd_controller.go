@@ -27,6 +27,7 @@ import (
 	"reflect"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"strconv"
+	"time"
 
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -173,6 +174,7 @@ func (r *KlovercloudCDReconciler) Reconcile(ctx context.Context, req ctrl.Reques
 		if err != nil && errors.IsNotFound(err) {
 			log.Info("No security deploy found. Namespace:", existingSecurity.Namespace, " Name:", existingSecurity.Name)
 		}
+		existingSecurity.Spec.Template.ObjectMeta.Annotations = map[string]string{"kubectl.kubernetes.io/restartedAt": time.Now().Format(time.RFC3339)}
 		r.Update(ctx, existingSecurity)
 	}
 
@@ -220,6 +222,7 @@ func (r *KlovercloudCDReconciler) Reconcile(ctx context.Context, req ctrl.Reques
 		}
 	}
 	if redeploy {
+		existingApiService.Spec.Template.ObjectMeta.Annotations = map[string]string{"kubectl.kubernetes.io/restartedAt": time.Now().Format(time.RFC3339)}
 		err = r.Update(ctx, existingApiService)
 		if err != nil {
 			log.Error(err, "Failed to update Deployment.", "Deployment.Namespace:", existingApiService.Namespace, "Deployment.Name:", existingApiService.Name)
@@ -342,8 +345,10 @@ func (r *KlovercloudCDReconciler) Reconcile(ctx context.Context, req ctrl.Reques
 			log.Error(err, "Failed to update Configmap.", "Namespace:", existingIntegrationManagerConfigmap.Namespace, "Name:", existingIntegrationManagerConfigmap.Name)
 			return ctrl.Result{}, err
 		}
+		redeploy=true
 	}
 	if redeploy {
+		existingIntegrationManager.Spec.Template.ObjectMeta.Annotations = map[string]string{"kubectl.kubernetes.io/restartedAt": time.Now().Format(time.RFC3339)}
 		err = r.Update(ctx, existingIntegrationManager)
 		if err != nil {
 			log.Error(err, "Failed to update Deployment.", "Deployment.Namespace:", existingIntegrationManager.Namespace, "Deployment.Name:", existingIntegrationManager.Name)
@@ -441,9 +446,11 @@ func (r *KlovercloudCDReconciler) Reconcile(ctx context.Context, req ctrl.Reques
 			log.Error(err, "Failed to update Configmap.", "Namespace:", existingEventBankConfigmap.Namespace, "Name:", existingEventBankConfigmap.Name)
 			return ctrl.Result{}, err
 		}
+		redeploy=true
 	}
 
 	if redeploy {
+		existingEventBank.Spec.Template.ObjectMeta.Annotations = map[string]string{"kubectl.kubernetes.io/restartedAt": time.Now().Format(time.RFC3339)}
 		err = r.Update(ctx, existingEventBank)
 		if err != nil {
 			log.Error(err, "Failed to update Deployment.", "Deployment.Namespace:", existingEventBank.Namespace, "Deployment.Name:", existingEventBank.Name)
@@ -534,6 +541,7 @@ func (r *KlovercloudCDReconciler) Reconcile(ctx context.Context, req ctrl.Reques
 			log.Error(err, "Failed to update Configmap.", "Namespace:", existingCoreEngineConfigmap.Namespace, "Name:", existingCoreEngineConfigmap.Name)
 			return ctrl.Result{}, err
 		}
+		existingCoreEngine.Spec.Template.ObjectMeta.Annotations = map[string]string{"kubectl.kubernetes.io/restartedAt": time.Now().Format(time.RFC3339)}
 		err = r.Update(ctx, existingCoreEngine)
 		if err != nil {
 			log.Error(err, "Failed to update Deployment.", "Deployment.Namespace:", existingCoreEngine.Namespace, "Deployment.Name:", existingCoreEngine.Name)
@@ -593,6 +601,7 @@ func (r *KlovercloudCDReconciler) Reconcile(ctx context.Context, req ctrl.Reques
 	}
 
 	if redeploy {
+		existingSecurity.Spec.Template.ObjectMeta.Annotations = map[string]string{"kubectl.kubernetes.io/restartedAt": time.Now().Format(time.RFC3339)}
 		err = r.Update(ctx, existingSecurity)
 		if err != nil {
 			log.Error(err, "Failed to update Security.", "Namespace:", existingSecurity.Namespace, "Name:", existingSecurity.Name)
@@ -690,9 +699,11 @@ func (r *KlovercloudCDReconciler) Reconcile(ctx context.Context, req ctrl.Reques
 				log.Error(err, "Failed to update Configmap.", "Namespace:", existingLightHouseCommand.Namespace, "Name:", existingLightHouseCommand.Name)
 				return ctrl.Result{}, err
 			}
+			redeploy=true
 		}
 
 		if redeploy {
+			existingLightHouseCommand.Spec.Template.ObjectMeta.Annotations = map[string]string{"kubectl.kubernetes.io/restartedAt": time.Now().Format(time.RFC3339)}
 			err = r.Update(ctx, existingLightHouseCommand)
 			if err != nil {
 				log.Error(err, "Failed to update Deployment.", "Deployment.Namespace:", existingLightHouseCommand.Namespace, "Deployment.Name:", existingLightHouseCommand.Name)
@@ -787,9 +798,11 @@ func (r *KlovercloudCDReconciler) Reconcile(ctx context.Context, req ctrl.Reques
 				log.Error(err, "Failed to update Configmap.", "Namespace:", existingLightHouseQuery.Namespace, "Name:", existingLightHouseQuery.Name)
 				return ctrl.Result{}, err
 			}
+			redeploy=true
 		}
 
 		if redeploy {
+			existingLightHouseQuery.Spec.Template.ObjectMeta.Annotations = map[string]string{"kubectl.kubernetes.io/restartedAt": time.Now().Format(time.RFC3339)}
 			err = r.Update(ctx, existingLightHouseQuery)
 			if err != nil {
 				log.Error(err, "Failed to update Deployment.", "Deployment.Namespace:", existingLightHouseQuery.Namespace, "Deployment.Name:", existingLightHouseQuery.Name)
@@ -896,6 +909,7 @@ func (r *KlovercloudCDReconciler) Reconcile(ctx context.Context, req ctrl.Reques
 			log.Error(err, "Failed to update Configmap.", "Namespace:", existingAgent.Namespace, "Name:", existingAgent.Name)
 			return ctrl.Result{}, err
 		}
+		redeploy=true
 	}
 
 	if deployLightHouse {
@@ -922,6 +936,7 @@ func (r *KlovercloudCDReconciler) Reconcile(ctx context.Context, req ctrl.Reques
 		}
 	}
 	if redeploy {
+		existingAgent.Spec.Template.ObjectMeta.Annotations = map[string]string{"kubectl.kubernetes.io/restartedAt": time.Now().Format(time.RFC3339)}
 		err = r.Update(ctx, existingAgent)
 		if err != nil {
 			log.Error(err, "Failed to update Deployment.", "Deployment.Namespace:", existingAgent.Namespace, "Deployment.Name:", existingAgent.Name)
