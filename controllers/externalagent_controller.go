@@ -18,20 +18,18 @@ package controllers
 
 import (
 	"context"
+	basev1alpha1 "github.com/klovercloud-ci-cd/klovercloudcd-operator/api/v1alpha1"
 	"github.com/klovercloud-ci-cd/klovercloudcd-operator/controllers/descriptor"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	"reflect"
-	"sigs.k8s.io/controller-runtime/pkg/reconcile"
-
-	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/log"
-
-	basev1alpha1 "github.com/klovercloud-ci-cd/klovercloudcd-operator/api/v1alpha1"
+	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
 
 // ExternalAgentReconciler reconciles a ExternalAgent object
@@ -164,7 +162,6 @@ func (r *ExternalAgentReconciler) Reconcile(ctx context.Context, req ctrl.Reques
 	}
 
 	// ********************************************** Agent Finished **************************************************************
-
 	return ctrl.Result{}, nil
 }
 
