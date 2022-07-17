@@ -19,7 +19,11 @@ package controllers
 import (
 	"context"
 	"github.com/klovercloud-ci-cd/klovercloudcd-operator/controllers/descriptor"
+	appsv1 "k8s.io/api/apps/v1"
+	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/types"
+	"reflect"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
 	"k8s.io/apimachinery/pkg/runtime"
@@ -67,10 +71,99 @@ func (r *ExternalAgentReconciler) Reconcile(ctx context.Context, req ctrl.Reques
 
 	// TODO(user): your logic here
 
-	err = descriptor.ApplyExternalAgent(r.Client, config.Namespace, config.Spec.Agent, string(config.Spec.Version))
-	if err != nil {
+	existingAgent := &appsv1.Deployment{}
+	err = r.Get(ctx, types.NamespacedName{Name: "klovercloud-ci-agent", Namespace: config.Namespace}, existingAgent)
+	if err != nil && errors.IsNotFound(err) {
+		// Define a new deployment
+		err = descriptor.ApplyExternalAgent(r.Client, config.Namespace, config.Spec.Agent, string(config.Spec.Version))
+		if err != nil {
+			log.Error(err, "Failed to create external agent Deployment", "Deployment.Namespace", config.Namespace, "Deployment.Name", "klovercloud-ci-agent")
+			return ctrl.Result{}, err
+		}
+		// Deployment created successfully - return and requeue
+		return ctrl.Result{Requeue: true}, nil
+	} else if err != nil {
+		log.Error(err, "Failed to get external agent Deployment")
 		return ctrl.Result{}, err
 	}
+	existingAgentConfigmap := &corev1.ConfigMap{}
+	err = r.Get(ctx, types.NamespacedName{Name: "klovercloud-ci-agent-envar-config", Namespace: config.Namespace}, existingAgentConfigmap)
+	if err != nil {
+		log.Error(err, "Failed to get klovercloud-ci-agent-envar-config.", err.Error())
+		return ctrl.Result{}, err
+	}
+	redeploy := false
+	redeployConfigmap := false
+	if existingAgentConfigmap.Data["PULL_SIZE"] != config.Spec.Agent.PullSize {
+		redeployConfigmap = true
+		existingAgentConfigmap.Data["PULL_SIZE"] = config.Spec.Agent.PullSize
+	}
+	if existingAgentConfigmap.Data["TERMINAL_BASE_URL"] != config.Spec.Agent.TerminalBaseUrl {
+		redeployConfigmap = true
+		existingAgentConfigmap.Data["TERMINAL_BASE_URL"] = config.Spec.Agent.TerminalBaseUrl
+	}
+	if existingAgentConfigmap.Data["TERMINAL_API_VERSION"] != config.Spec.Agent.TerminalApiVersion {
+		redeployConfigmap = true
+		existingAgentConfigmap.Data["TERMINAL_API_VERSION"] = config.Spec.Agent.TerminalApiVersion
+	}
+	if existingAgentConfigmap.Data["TOKEN"] != config.Spec.Agent.Token {
+		redeployConfigmap = true
+		existingAgentConfigmap.Data["TOKEN"] = config.Spec.Agent.Token
+	}
+	for i, each := range existingAgent.Spec.Template.Spec.Containers {
+		if each.Name == "app" {
+			isRequestedResourcesChanged := each.Resources.Requests.Cpu() != config.Spec.Agent.Resources.Requests.Cpu() || each.Resources.Requests.Memory() != config.Spec.Agent.Resources.Requests.Memory()
+			isLimitedRequestedChanged := each.Resources.Limits.Cpu() != config.Spec.Agent.Resources.Limits.Cpu() || each.Resources.Limits.Memory() != config.Spec.Agent.Resources.Limits.Memory()
+
+			if isRequestedResourcesChanged || isLimitedRequestedChanged {
+				redeploy = true
+				existingAgent.Spec.Template.Spec.Containers[i].Resources = config.Spec.Agent.Resources
+				break
+			}
+
+		}
+	}
+	if redeployConfigmap {
+		err = r.Update(ctx, existingAgentConfigmap)
+		if err != nil {
+			log.Error(err, "Failed to update external agent configmap.", "Namespace:", existingAgent.Namespace, "Name:", existingAgent.Name)
+			return ctrl.Result{}, err
+		}
+	}
+	if redeploy {
+		err = r.Update(ctx, existingAgent)
+		if err != nil {
+			log.Error(err, "Failed to update external agent Deployment.", "Deployment.Namespace:", existingAgent.Namespace, "Deployment.Name:", existingAgent.Name)
+			return ctrl.Result{}, err
+		}
+		// Spec updated - return and requeue
+		return ctrl.Result{Requeue: true}, nil
+	}
+
+	// Update the agent status with the pod names
+	// List the pods for this api service's deployment
+	podList := &corev1.PodList{}
+	listOpts := []client.ListOption{
+		client.InNamespace(config.Namespace),
+		client.MatchingLabels(map[string]string{"app": "klovercloud-ci-agent"}),
+	}
+	if err = r.List(ctx, podList, listOpts...); err != nil {
+		log.Error(err, "Failed to list pods.", "Agent.Namespace:", config.Namespace, "Agent.Name:", "klovercloud-ci-agent")
+		return ctrl.Result{}, err
+	}
+	podNames := getPodNames(podList.Items)
+
+	// Update status.Nodes if needed
+	if !reflect.DeepEqual(podNames, config.Status.AgentPods) {
+		config.Status.AgentPods = podNames
+		err := r.Status().Update(ctx, config)
+		if err != nil {
+			log.Error(err, "Failed to update AgentPods status")
+			return ctrl.Result{}, err
+		}
+	}
+
+	// ********************************************** Agent Finished **************************************************************
 
 	return ctrl.Result{}, nil
 }
