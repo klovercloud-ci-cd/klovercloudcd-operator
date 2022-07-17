@@ -31,6 +31,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
+	"time"
 )
 
 // ExternalAgentReconciler reconciles a ExternalAgent object
@@ -128,8 +129,10 @@ func (r *ExternalAgentReconciler) Reconcile(ctx context.Context, req ctrl.Reques
 			log.Error(err, "Failed to update external agent configmap.", "Namespace:", existingAgent.Namespace, "Name:", existingAgent.Name)
 			return ctrl.Result{}, err
 		}
+		redeploy=true
 	}
 	if redeploy {
+		existingAgent.Spec.Template.ObjectMeta.Annotations = map[string]string{"kubectl.kubernetes.io/restartedAt": time.Now().Format(time.RFC3339)}
 		err = r.Update(ctx, existingAgent)
 		if err != nil {
 			log.Error(err, "Failed to update external agent Deployment.", "Deployment.Namespace:", existingAgent.Namespace, "Deployment.Name:", existingAgent.Name)
