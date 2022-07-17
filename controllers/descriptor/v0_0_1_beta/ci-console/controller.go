@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/klovercloud-ci-cd/klovercloudcd-operator/api/v1alpha1"
+	"github.com/klovercloud-ci-cd/klovercloudcd-operator/controllers"
 	"github.com/klovercloud-ci-cd/klovercloudcd-operator/controllers/descriptor/service"
 	"github.com/klovercloud-ci-cd/klovercloudcd-operator/controllers/descriptor/v0_0_1_beta/utility"
 	"io/ioutil"
@@ -11,8 +12,11 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/client-go/kubernetes/scheme"
 	"log"
+	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"strings"
+
+	basev1alpha1 "github.com/klovercloud-ci-cd/klovercloudcd-operator/api/v1alpha1"
 )
 
 type console struct {
@@ -56,7 +60,7 @@ func (c console) ModifyDeployment(namespace string, console v1alpha1.Console) se
 			c.Deployment.Spec.Template.Spec.Containers[i].Resources = console.Resources
 		}
 	}
-	c.Deployment.Spec.Replicas=&console.Size
+	c.Deployment.Spec.Replicas = &console.Size
 	return c
 }
 
@@ -73,6 +77,11 @@ func (c console) Apply(wait bool) error {
 	if c.Error != nil {
 		return c.Error
 	}
+
+	config := &basev1alpha1.KlovercloudCD{}
+
+	ctrl.SetControllerReference(config, &c.Configmap, controllers.KlovercloudCDReconciler{}.Scheme)
+
 	err := c.ApplyConfigMap()
 	if err != nil {
 		log.Println("[ERROR]: Failed to create configmap for console service.", "Deployment.Namespace", c.Deployment.Namespace, "Deployment.Name", c.Deployment.Name, err.Error())
@@ -94,6 +103,7 @@ func (c console) Apply(wait bool) error {
 		}
 	}
 
+	ctrl.SetControllerReference(config, &c.Deployment, controllers.KlovercloudCDReconciler{}.Scheme)
 	err = c.ApplyDeployment()
 	if err != nil {
 		log.Println("[ERROR]: Failed to apply deployment for console service.", "Deployment.Namespace: ", c.Deployment.Namespace, " Deployment.Name: ", c.Deployment.Name+". ", err.Error())
@@ -105,6 +115,8 @@ func (c console) Apply(wait bool) error {
 			return err
 		}
 	}
+
+	ctrl.SetControllerReference(config, &c.Service, controllers.KlovercloudCDReconciler{}.Scheme)
 	err = c.ApplyService()
 	if err != nil {
 		log.Println("[ERROR]: Failed to apply service for console service.", "Deployment.Namespace: ", c.Deployment.Namespace, " Deployment.Name: ", c.Deployment.Name+". ", err.Error())

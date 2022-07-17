@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/klovercloud-ci-cd/klovercloudcd-operator/api/v1alpha1"
+	"github.com/klovercloud-ci-cd/klovercloudcd-operator/controllers"
 	"github.com/klovercloud-ci-cd/klovercloudcd-operator/controllers/descriptor/v0_0_1_beta/service"
 	"github.com/klovercloud-ci-cd/klovercloudcd-operator/controllers/descriptor/v0_0_1_beta/utility"
 	"io/ioutil"
@@ -12,8 +13,11 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/kubernetes/scheme"
 	"log"
+	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"strings"
+
+	basev1alpha1 "github.com/klovercloud-ci-cd/klovercloudcd-operator/api/v1alpha1"
 )
 
 type apiService struct {
@@ -81,7 +85,7 @@ func (a apiService) ModifyDeployment(namespace string, apiService v1alpha1.ApiSe
 			a.Deployment.Spec.Template.Spec.Containers[index].Resources = apiService.Resources
 		}
 	}
-	a.Deployment.Spec.Replicas=&apiService.Size
+	a.Deployment.Spec.Replicas = &apiService.Size
 	return a
 }
 
@@ -98,6 +102,11 @@ func (a apiService) Apply(wait bool) error {
 	if a.Error != nil {
 		return a.Error
 	}
+
+	config := &basev1alpha1.KlovercloudCD{}
+
+	ctrl.SetControllerReference(config, &a.Configmap, controllers.KlovercloudCDReconciler{}.Scheme)
+
 	err := a.ApplyConfigMap()
 	if err != nil {
 		log.Println("[ERROR]: Failed to create configmap for api service.", "Deployment.Namespace", a.Deployment.Namespace, "Deployment.Name", a.Deployment.Name, err.Error())
@@ -119,6 +128,8 @@ func (a apiService) Apply(wait bool) error {
 			existingPodMap[each.Name] = true
 		}
 	}
+
+	ctrl.SetControllerReference(config, &a.Deployment, controllers.KlovercloudCDReconciler{}.Scheme)
 	err = a.ApplyDeployment()
 	if err != nil {
 		log.Println("[ERROR]: Failed to apply deployment for api service.", "Deployment.Namespace: ", a.Deployment.Namespace, " Deployment.Name: ", a.Deployment.Name+". ", err.Error())
@@ -130,6 +141,8 @@ func (a apiService) Apply(wait bool) error {
 			return err
 		}
 	}
+
+	ctrl.SetControllerReference(config, &a.Service, controllers.KlovercloudCDReconciler{}.Scheme)
 	err = a.ApplyService()
 	if err != nil {
 		log.Println("[ERROR]: Failed to apply service for api service.", "Deployment.Namespace: ", a.Deployment.Namespace, " Deployment.Name: ", a.Deployment.Name+". ", err.Error())

@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/klovercloud-ci-cd/klovercloudcd-operator/api/v1alpha1"
+	"github.com/klovercloud-ci-cd/klovercloudcd-operator/controllers"
 	"github.com/klovercloud-ci-cd/klovercloudcd-operator/controllers/descriptor/v0_0_1_beta/service"
 	"github.com/klovercloud-ci-cd/klovercloudcd-operator/controllers/descriptor/v0_0_1_beta/utility"
 	"github.com/klovercloud-ci-cd/klovercloudcd-operator/enums"
@@ -12,7 +13,10 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/client-go/kubernetes/scheme"
 	"log"
+	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+
+	basev1alpha1 "github.com/klovercloud-ci-cd/klovercloudcd-operator/api/v1alpha1"
 )
 
 type lightHouseQuery struct {
@@ -24,9 +28,9 @@ type lightHouseQuery struct {
 }
 
 func (l lightHouseQuery) Delete() error {
-	l.Client.Delete(context.Background(),&l.Service)
-	l.Client.Delete(context.Background(),&l.Deployment)
-	l.Client.Delete(context.Background(),&l.Configmap)
+	l.Client.Delete(context.Background(), &l.Service)
+	l.Client.Delete(context.Background(), &l.Deployment)
+	l.Client.Delete(context.Background(), &l.Configmap)
 	return nil
 }
 
@@ -55,7 +59,7 @@ func (l lightHouseQuery) ModifyDeployment(namespace string, lightHouseQuery v1al
 			l.Deployment.Spec.Template.Spec.Containers[i].Resources = lightHouseQuery.Resources
 		}
 	}
-	l.Deployment.Spec.Replicas=&lightHouseQuery.Size
+	l.Deployment.Spec.Replicas = &lightHouseQuery.Size
 	return l
 }
 
@@ -72,6 +76,9 @@ func (l lightHouseQuery) Apply(wait bool) error {
 	if l.Error != nil {
 		return l.Error
 	}
+
+	config := &basev1alpha1.KlovercloudCD{}
+	ctrl.SetControllerReference(config, &l.Configmap, controllers.KlovercloudCDReconciler{}.Scheme)
 	err := l.ApplyConfigMap()
 	if err != nil {
 		log.Println("[ERROR]: Failed to create configmap for light house query service.", "Deployment.Namespace", l.Deployment.Namespace, "Deployment.Name", l.Deployment.Name, err.Error())
@@ -93,6 +100,7 @@ func (l lightHouseQuery) Apply(wait bool) error {
 		}
 	}
 
+	ctrl.SetControllerReference(config, &l.Deployment, controllers.KlovercloudCDReconciler{}.Scheme)
 	err = l.ApplyDeployment()
 	if err != nil {
 		log.Println("[ERROR]: Failed to apply deployment for light house query service.", "Deployment.Namespace: ", l.Deployment.Namespace, " Deployment.Name: ", l.Deployment.Name+". ", err.Error())
@@ -104,6 +112,8 @@ func (l lightHouseQuery) Apply(wait bool) error {
 			return err
 		}
 	}
+
+	ctrl.SetControllerReference(config, &l.Service, controllers.KlovercloudCDReconciler{}.Scheme)
 	err = l.ApplyService()
 	if err != nil {
 		log.Println("[ERROR]: Failed to apply service for light house query service.", "Deployment.Namespace: ", l.Deployment.Namespace, " Deployment.Name: ", l.Deployment.Name+". ", err.Error())

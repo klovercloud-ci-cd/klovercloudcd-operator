@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/klovercloud-ci-cd/klovercloudcd-operator/api/v1alpha1"
+	"github.com/klovercloud-ci-cd/klovercloudcd-operator/controllers"
 	"github.com/klovercloud-ci-cd/klovercloudcd-operator/controllers/descriptor/v0_0_1_beta/service"
 	"github.com/klovercloud-ci-cd/klovercloudcd-operator/controllers/descriptor/v0_0_1_beta/utility"
 	"io/ioutil"
@@ -14,8 +15,11 @@ import (
 	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/rest"
 	"log"
+	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"strings"
+
+	basev1alpha1 "github.com/klovercloud-ci-cd/klovercloudcd-operator/api/v1alpha1"
 )
 
 type agent struct {
@@ -129,7 +133,7 @@ func (a agent) ModifyDeployment(namespace string, agent v1alpha1.Agent) service.
 			a.Deployment.Spec.Template.Spec.Containers[index].Resources = agent.Resources
 		}
 	}
-	a.Deployment.Spec.Replicas=&agent.Size
+	a.Deployment.Spec.Replicas = &agent.Size
 	return a
 }
 
@@ -146,31 +150,41 @@ func (a agent) Apply(wait bool) error {
 	if a.Error != nil {
 		return a.Error
 	}
+
+	config := &basev1alpha1.KlovercloudCD{}
+
+	ctrl.SetControllerReference(config, &a.ClusterRole, controllers.KlovercloudCDReconciler{}.Scheme)
+
 	err := a.ApplyClusterRole()
 	if err != nil {
 		return err
 	}
 
+	ctrl.SetControllerReference(config, &a.ServiceAccount, controllers.KlovercloudCDReconciler{}.Scheme)
 	err = a.ApplyServiceAccount()
 	if err != nil {
 		return err
 	}
 
+	ctrl.SetControllerReference(config, &a.ClusterRoleBinding, controllers.KlovercloudCDReconciler{}.Scheme)
 	err = a.ApplyClusterRoleBinding()
 	if err != nil {
 		return err
 	}
 
+	ctrl.SetControllerReference(config, &a.Configmap, controllers.KlovercloudCDReconciler{}.Scheme)
 	err = a.ApplyConfigMap()
 	if err != nil {
 		return err
 	}
 
+	ctrl.SetControllerReference(config, &a.Deployment, controllers.KlovercloudCDReconciler{}.Scheme)
 	err = a.ApplyDeployment()
 	if err != nil {
 		return err
 	}
 
+	ctrl.SetControllerReference(config, &a.Service, controllers.KlovercloudCDReconciler{}.Scheme)
 	err = a.ApplyService()
 	if err != nil {
 		return err

@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/klovercloud-ci-cd/klovercloudcd-operator/api/v1alpha1"
+	"github.com/klovercloud-ci-cd/klovercloudcd-operator/controllers"
 	"github.com/klovercloud-ci-cd/klovercloudcd-operator/controllers/descriptor/v0_0_1_beta/service"
 	"github.com/klovercloud-ci-cd/klovercloudcd-operator/controllers/descriptor/v0_0_1_beta/utility"
 	"github.com/klovercloud-ci-cd/klovercloudcd-operator/enums"
@@ -14,9 +15,12 @@ import (
 	_ "k8s.io/client-go/informers/rbac"
 	"k8s.io/client-go/kubernetes/scheme"
 	"log"
+	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"strconv"
 	"strings"
+
+	basev1alpha1 "github.com/klovercloud-ci-cd/klovercloudcd-operator/api/v1alpha1"
 )
 
 type coreEngine struct {
@@ -30,7 +34,7 @@ type coreEngine struct {
 	Error              error
 }
 
-func (c coreEngine) ModifyConfigmap(namespace string,coreEngine v1alpha1.CoreEngine, db v1alpha1.DB) service.CoreEngine {
+func (c coreEngine) ModifyConfigmap(namespace string, coreEngine v1alpha1.CoreEngine, db v1alpha1.DB) service.CoreEngine {
 	if c.ConfigMap.ObjectMeta.Labels == nil {
 		c.ConfigMap.ObjectMeta.Labels = make(map[string]string)
 	}
@@ -42,10 +46,10 @@ func (c coreEngine) ModifyConfigmap(namespace string,coreEngine v1alpha1.CoreEng
 		c.ConfigMap.Data["MONGO_PORT"] = db.ServerPort
 	}
 
-	if coreEngine.NumberOfConCurrentProcess==0{
-		coreEngine.NumberOfConCurrentProcess=5
+	if coreEngine.NumberOfConCurrentProcess == 0 {
+		coreEngine.NumberOfConCurrentProcess = 5
 	}
-	c.ConfigMap.Data["ALLOWED_CONCURRENT_BUILD"]=strconv.Itoa(coreEngine.NumberOfConCurrentProcess)
+	c.ConfigMap.Data["ALLOWED_CONCURRENT_BUILD"] = strconv.Itoa(coreEngine.NumberOfConCurrentProcess)
 	EVENT_STORE_URL := c.ConfigMap.Data["EVENT_STORE_URL"]
 	replacedUrl := strings.ReplaceAll(EVENT_STORE_URL, ".klovercloud.", "."+namespace+".")
 	c.ConfigMap.Data["EVENT_STORE_URL"] = replacedUrl
@@ -64,7 +68,7 @@ func (c coreEngine) ModifyDeployment(namespace string, coreEngine v1alpha1.CoreE
 			c.Deployment.Spec.Template.Spec.Containers[index].Resources = coreEngine.Resources
 		}
 	}
-	c.Deployment.Spec.Replicas=&coreEngine.Size
+	c.Deployment.Spec.Replicas = &coreEngine.Size
 	return c
 }
 
@@ -111,21 +115,31 @@ func (c coreEngine) Apply(wait bool) error {
 	if c.Error != nil {
 		return c.Error
 	}
+
+	config := &basev1alpha1.KlovercloudCD{}
+
+	ctrl.SetControllerReference(config, &c.ClusterRole, controllers.KlovercloudCDReconciler{}.Scheme)
 	err := c.ApplyClusterRole()
 	if err != nil {
 		log.Println("[ERROR]: Failed to create cluster role for core engine service.", "Deployment.Namespace", c.Deployment.Namespace, "Deployment.Name", c.Deployment.Name, err.Error())
 		return err
 	}
+
+	ctrl.SetControllerReference(config, &c.ClusterRoleBinding, controllers.KlovercloudCDReconciler{}.Scheme)
 	err = c.ApplyClusterRoleBinding()
 	if err != nil {
 		log.Println("[ERROR]: Failed to create cluster role binding for core engine service.", "Deployment.Namespace", c.Deployment.Namespace, "Deployment.Name", c.Deployment.Name, err.Error())
 		return err
 	}
+
+	ctrl.SetControllerReference(config, &c.ServiceAccount, controllers.KlovercloudCDReconciler{}.Scheme)
 	err = c.ApplyServiceAccount()
 	if err != nil {
 		log.Println("[ERROR]: Failed to create service account for core engine service.", "Deployment.Namespace", c.Deployment.Namespace, "Deployment.Name", c.Deployment.Name, err.Error())
 		return err
 	}
+
+	ctrl.SetControllerReference(config, &c.ConfigMap, controllers.KlovercloudCDReconciler{}.Scheme)
 	err = c.ApplyConfigMap()
 	if err != nil {
 		log.Println("[ERROR]: Failed to create configmap for event bank service.", "Deployment.Namespace", c.Deployment.Namespace, "Deployment.Name", c.Deployment.Name, err.Error())
@@ -147,6 +161,7 @@ func (c coreEngine) Apply(wait bool) error {
 		}
 	}
 
+	ctrl.SetControllerReference(config, &c.Deployment, controllers.KlovercloudCDReconciler{}.Scheme)
 	err = c.ApplyDeployment()
 	if err != nil {
 		log.Println("[ERROR]: Failed to apply deployment for event bank service.", "Deployment.Namespace: ", c.Deployment.Namespace, " Deployment.Name: ", c.Deployment.Name+". ", err.Error())
@@ -158,6 +173,8 @@ func (c coreEngine) Apply(wait bool) error {
 			return err
 		}
 	}
+
+	ctrl.SetControllerReference(config, &c.Service, controllers.KlovercloudCDReconciler{}.Scheme)
 	err = c.ApplyService()
 	if err != nil {
 		log.Println("[ERROR]: Failed to apply service for event bank service.", "Deployment.Namespace: ", c.Deployment.Namespace, " Deployment.Name: ", c.Deployment.Name+". ", err.Error())

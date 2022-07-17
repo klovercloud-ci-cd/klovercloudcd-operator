@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/klovercloud-ci-cd/klovercloudcd-operator/api/v1alpha1"
+	"github.com/klovercloud-ci-cd/klovercloudcd-operator/controllers"
 	"github.com/klovercloud-ci-cd/klovercloudcd-operator/controllers/descriptor/v0_0_1_beta/service"
 	"github.com/klovercloud-ci-cd/klovercloudcd-operator/controllers/descriptor/v0_0_1_beta/utility"
 	"github.com/klovercloud-ci-cd/klovercloudcd-operator/enums"
@@ -12,8 +13,11 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/client-go/kubernetes/scheme"
 	"log"
+	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"strings"
+
+	basev1alpha1 "github.com/klovercloud-ci-cd/klovercloudcd-operator/api/v1alpha1"
 )
 
 type integrationManager struct {
@@ -73,7 +77,7 @@ func (i integrationManager) ModifyDeployment(namespace string, integrationManage
 			i.Deployment.Spec.Template.Spec.Containers[index].Resources = integrationManager.Resources
 		}
 	}
-	i.Deployment.Spec.Replicas=&integrationManager.Size
+	i.Deployment.Spec.Replicas = &integrationManager.Size
 	return i
 }
 
@@ -90,6 +94,10 @@ func (i integrationManager) Apply(wait bool) error {
 	if i.Error != nil {
 		return i.Error
 	}
+
+	config := &basev1alpha1.KlovercloudCD{}
+
+	ctrl.SetControllerReference(config, &i.Configmap, controllers.KlovercloudCDReconciler{}.Scheme)
 	err := i.ApplyConfigMap()
 	if err != nil {
 		log.Println("[ERROR]: Failed to create configmap for security service.", "Deployment.Namespace", i.Deployment.Namespace, "Deployment.Name", i.Deployment.Name, err.Error())
@@ -113,6 +121,8 @@ func (i integrationManager) Apply(wait bool) error {
 			existingPodMap[each.Name] = true
 		}
 	}
+
+	ctrl.SetControllerReference(config, &i.Deployment, controllers.KlovercloudCDReconciler{}.Scheme)
 	err = i.ApplyDeployment()
 	if err != nil {
 		log.Println("[ERROR]: Failed to apply deployment for security service.", "Deployment.Namespace: ", i.Deployment.Namespace, " Deployment.Name: ", i.Deployment.Name+". ", err.Error())
@@ -125,6 +135,8 @@ func (i integrationManager) Apply(wait bool) error {
 			return err
 		}
 	}
+
+	ctrl.SetControllerReference(config, &i.Service, controllers.KlovercloudCDReconciler{}.Scheme)
 	err = i.ApplyService()
 	if err != nil {
 		log.Println("[ERROR]: Failed to apply service for security service.", "Deployment.Namespace: ", i.Deployment.Namespace, " Deployment.Name: ", i.Deployment.Name+". ", err.Error())
