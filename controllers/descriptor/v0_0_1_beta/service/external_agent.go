@@ -1,6 +1,9 @@
 package service
 
-import "github.com/klovercloud-ci-cd/klovercloudcd-operator/api/v1alpha1"
+import (
+	"github.com/klovercloud-ci-cd/klovercloudcd-operator/api/v1alpha1"
+	"k8s.io/apimachinery/pkg/runtime"
+)
 
 type ExternalAgent interface {
 	ModifyClusterRole() ExternalAgent
@@ -9,7 +12,7 @@ type ExternalAgent interface {
 	ModifyConfigmap(namespace string,agent v1alpha1.Agent) ExternalAgent
 	ModifyDeployment(namespace string, agent v1alpha1.Agent) ExternalAgent
 	ModifyService(namespace string) ExternalAgent
-	Apply(wait bool) error
+	Apply(scheme *runtime.Scheme,wait bool) error
 	ApplyClusterRole() error
 	ApplyClusterRoleBinding() error
 	ApplyServiceAccount() error

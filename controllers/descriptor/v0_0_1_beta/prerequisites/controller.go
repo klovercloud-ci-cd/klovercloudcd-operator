@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/klovercloud-ci-cd/klovercloudcd-operator/api/v1alpha1"
-	"github.com/klovercloud-ci-cd/klovercloudcd-operator/controllers"
 	"github.com/klovercloud-ci-cd/klovercloudcd-operator/controllers/descriptor/v0_0_1_beta/service"
 	"github.com/klovercloud-ci-cd/klovercloudcd-operator/controllers/descriptor/v0_0_1_beta/utility"
 	"github.com/klovercloud-ci-cd/klovercloudcd-operator/enums"
@@ -14,6 +13,7 @@ import (
 	coreV1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/yaml"
 	"k8s.io/client-go/kubernetes/scheme"
@@ -116,28 +116,28 @@ func (p prerequisites) ApplyTektonDescriptor() error {
 	return nil
 }
 
-func (p prerequisites) Apply() error {
+func (p prerequisites) Apply(scheme *runtime.Scheme) error {
 	if p.Error != nil {
 		return p.Error
 	}
 
 	config := &basev1alpha1.KlovercloudCD{}
 
-	ctrl.SetControllerReference(config, &p.Configmap, controllers.KlovercloudCDReconciler{}.Scheme)
+	ctrl.SetControllerReference(config, &p.Configmap, scheme)
 	err := p.ApplyTektonDescriptor()
 	if err != nil {
 		log.Println("[ERROR]: Failed to create tekton", err.Error())
 		return err
 	}
 
-	ctrl.SetControllerReference(config, &p.Configmap, controllers.KlovercloudCDReconciler{}.Scheme)
+	ctrl.SetControllerReference(config, &p.Configmap, scheme)
 	err = p.ApplySecret()
 	if err != nil {
 		log.Println("[ERROR]: Failed to create secret ", "Secret.Namespace", p.Secret.Namespace, "Deployment.Name", p.Secret.Name, err.Error())
 		return err
 	}
 
-	ctrl.SetControllerReference(config, &p.Configmap, controllers.KlovercloudCDReconciler{}.Scheme)
+	ctrl.SetControllerReference(config, &p.Configmap, scheme)
 	err = p.ApplySecurityConfigMap()
 	if err != nil {
 		log.Println("[ERROR]: Failed to create security service configMap ", "Secret.Namespace", p.Secret.Namespace, "Deployment.Name", p.Secret.Name, err.Error())

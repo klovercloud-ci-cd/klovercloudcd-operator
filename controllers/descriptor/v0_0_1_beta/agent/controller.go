@@ -5,13 +5,13 @@ import (
 	"errors"
 	"fmt"
 	"github.com/klovercloud-ci-cd/klovercloudcd-operator/api/v1alpha1"
-	"github.com/klovercloud-ci-cd/klovercloudcd-operator/controllers"
 	"github.com/klovercloud-ci-cd/klovercloudcd-operator/controllers/descriptor/v0_0_1_beta/service"
 	"github.com/klovercloud-ci-cd/klovercloudcd-operator/controllers/descriptor/v0_0_1_beta/utility"
 	"io/ioutil"
 	appv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
+	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/rest"
 	"log"
@@ -146,45 +146,45 @@ func (a agent) ModifyService(namespace string) service.Agent {
 	return a
 }
 
-func (a agent) Apply(wait bool) error {
+func (a agent) Apply(scheme *runtime.Scheme,wait bool) error {
 	if a.Error != nil {
 		return a.Error
 	}
 
 	config := &basev1alpha1.KlovercloudCD{}
 
-	ctrl.SetControllerReference(config, &a.ClusterRole, controllers.KlovercloudCDReconciler{}.Scheme)
+	ctrl.SetControllerReference(config, &a.ClusterRole, scheme)
 
 	err := a.ApplyClusterRole()
 	if err != nil {
 		return err
 	}
 
-	ctrl.SetControllerReference(config, &a.ServiceAccount, controllers.KlovercloudCDReconciler{}.Scheme)
+	ctrl.SetControllerReference(config, &a.ServiceAccount, scheme)
 	err = a.ApplyServiceAccount()
 	if err != nil {
 		return err
 	}
 
-	ctrl.SetControllerReference(config, &a.ClusterRoleBinding, controllers.KlovercloudCDReconciler{}.Scheme)
+	ctrl.SetControllerReference(config, &a.ClusterRoleBinding, scheme)
 	err = a.ApplyClusterRoleBinding()
 	if err != nil {
 		return err
 	}
 
-	ctrl.SetControllerReference(config, &a.Configmap, controllers.KlovercloudCDReconciler{}.Scheme)
+	ctrl.SetControllerReference(config, &a.Configmap, scheme)
 	err = a.ApplyConfigMap()
 	if err != nil {
 		return err
 	}
 
-	ctrl.SetControllerReference(config, &a.Deployment, controllers.KlovercloudCDReconciler{}.Scheme)
+	ctrl.SetControllerReference(config, &a.Deployment, scheme)
 	err = a.ApplyDeployment()
 	if err != nil {
 		return err
 	}
 
-	ctrl.SetControllerReference(config, &a.Service, controllers.KlovercloudCDReconciler{}.Scheme)
+	ctrl.SetControllerReference(config, &a.Service, scheme)
 	err = a.ApplyService()
 	if err != nil {
 		return err

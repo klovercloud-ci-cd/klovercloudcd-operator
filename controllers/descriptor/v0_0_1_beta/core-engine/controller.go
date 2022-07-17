@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"github.com/klovercloud-ci-cd/klovercloudcd-operator/api/v1alpha1"
-	"github.com/klovercloud-ci-cd/klovercloudcd-operator/controllers"
 	"github.com/klovercloud-ci-cd/klovercloudcd-operator/controllers/descriptor/v0_0_1_beta/service"
 	"github.com/klovercloud-ci-cd/klovercloudcd-operator/controllers/descriptor/v0_0_1_beta/utility"
 	"github.com/klovercloud-ci-cd/klovercloudcd-operator/enums"
@@ -12,6 +11,7 @@ import (
 	appv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
+	"k8s.io/apimachinery/pkg/runtime"
 	_ "k8s.io/client-go/informers/rbac"
 	"k8s.io/client-go/kubernetes/scheme"
 	"log"
@@ -111,35 +111,35 @@ func (c coreEngine) ModifyServiceAccount(namespace string) service.CoreEngine {
 	return c
 }
 
-func (c coreEngine) Apply(wait bool) error {
+func (c coreEngine) Apply(scheme *runtime.Scheme,wait bool) error {
 	if c.Error != nil {
 		return c.Error
 	}
 
 	config := &basev1alpha1.KlovercloudCD{}
 
-	ctrl.SetControllerReference(config, &c.ClusterRole, controllers.KlovercloudCDReconciler{}.Scheme)
+	ctrl.SetControllerReference(config, &c.ClusterRole, scheme)
 	err := c.ApplyClusterRole()
 	if err != nil {
 		log.Println("[ERROR]: Failed to create cluster role for core engine service.", "Deployment.Namespace", c.Deployment.Namespace, "Deployment.Name", c.Deployment.Name, err.Error())
 		return err
 	}
 
-	ctrl.SetControllerReference(config, &c.ClusterRoleBinding, controllers.KlovercloudCDReconciler{}.Scheme)
+	ctrl.SetControllerReference(config, &c.ClusterRoleBinding, scheme)
 	err = c.ApplyClusterRoleBinding()
 	if err != nil {
 		log.Println("[ERROR]: Failed to create cluster role binding for core engine service.", "Deployment.Namespace", c.Deployment.Namespace, "Deployment.Name", c.Deployment.Name, err.Error())
 		return err
 	}
 
-	ctrl.SetControllerReference(config, &c.ServiceAccount, controllers.KlovercloudCDReconciler{}.Scheme)
+	ctrl.SetControllerReference(config, &c.ServiceAccount, scheme)
 	err = c.ApplyServiceAccount()
 	if err != nil {
 		log.Println("[ERROR]: Failed to create service account for core engine service.", "Deployment.Namespace", c.Deployment.Namespace, "Deployment.Name", c.Deployment.Name, err.Error())
 		return err
 	}
 
-	ctrl.SetControllerReference(config, &c.ConfigMap, controllers.KlovercloudCDReconciler{}.Scheme)
+	ctrl.SetControllerReference(config, &c.ConfigMap, scheme)
 	err = c.ApplyConfigMap()
 	if err != nil {
 		log.Println("[ERROR]: Failed to create configmap for event bank service.", "Deployment.Namespace", c.Deployment.Namespace, "Deployment.Name", c.Deployment.Name, err.Error())
@@ -161,7 +161,7 @@ func (c coreEngine) Apply(wait bool) error {
 		}
 	}
 
-	ctrl.SetControllerReference(config, &c.Deployment, controllers.KlovercloudCDReconciler{}.Scheme)
+	ctrl.SetControllerReference(config, &c.Deployment, scheme)
 	err = c.ApplyDeployment()
 	if err != nil {
 		log.Println("[ERROR]: Failed to apply deployment for event bank service.", "Deployment.Namespace: ", c.Deployment.Namespace, " Deployment.Name: ", c.Deployment.Name+". ", err.Error())
@@ -174,7 +174,7 @@ func (c coreEngine) Apply(wait bool) error {
 		}
 	}
 
-	ctrl.SetControllerReference(config, &c.Service, controllers.KlovercloudCDReconciler{}.Scheme)
+	ctrl.SetControllerReference(config, &c.Service, scheme)
 	err = c.ApplyService()
 	if err != nil {
 		log.Println("[ERROR]: Failed to apply service for event bank service.", "Deployment.Namespace: ", c.Deployment.Namespace, " Deployment.Name: ", c.Deployment.Name+". ", err.Error())

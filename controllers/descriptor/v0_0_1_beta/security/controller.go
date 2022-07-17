@@ -5,7 +5,8 @@ import (
 	"errors"
 	"fmt"
 	"github.com/klovercloud-ci-cd/klovercloudcd-operator/api/v1alpha1"
-	"github.com/klovercloud-ci-cd/klovercloudcd-operator/controllers"
+	"k8s.io/apimachinery/pkg/runtime"
+
 	"github.com/klovercloud-ci-cd/klovercloudcd-operator/controllers/descriptor/v0_0_1_beta/service"
 	"github.com/klovercloud-ci-cd/klovercloudcd-operator/controllers/descriptor/v0_0_1_beta/utility"
 	"io/ioutil"
@@ -79,7 +80,7 @@ func getDeploymentFromFile() appv1.Deployment {
 	return *obj.(*appv1.Deployment)
 }
 
-func (s security) Apply(wait bool) error {
+func (s security) Apply(scheme *runtime.Scheme,wait bool) error {
 	if s.Error != nil {
 		return s.Error
 	}
@@ -104,7 +105,7 @@ func (s security) Apply(wait bool) error {
 
 	config := &basev1alpha1.KlovercloudCD{}
 
-	ctrl.SetControllerReference(config, &s.Deployment, controllers.KlovercloudCDReconciler{}.Scheme)
+	ctrl.SetControllerReference(config, &s.Deployment, scheme)
 	err := s.ApplyDeployment()
 	if err != nil {
 		log.Println("[ERROR]: Failed to apply deployment for security service.", "Deployment.Namespace: ", s.Deployment.Namespace, " Deployment.Name: ", s.Deployment.Name+". ", err.Error())
@@ -117,7 +118,7 @@ func (s security) Apply(wait bool) error {
 		}
 	}
 
-	ctrl.SetControllerReference(config, &s.Service, controllers.KlovercloudCDReconciler{}.Scheme)
+	ctrl.SetControllerReference(config, &s.Service, scheme)
 	err = s.ApplyService()
 	if err != nil {
 		log.Println("[ERROR]: Failed to apply service for security service.", "Deployment.Namespace: ", s.Deployment.Namespace, " Deployment.Name: ", s.Deployment.Name+". ", err.Error())

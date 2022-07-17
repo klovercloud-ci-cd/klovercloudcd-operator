@@ -78,7 +78,7 @@ func (r *KlovercloudCDReconciler) Reconcile(ctx context.Context, req ctrl.Reques
 	err = r.Get(ctx, types.NamespacedName{Name: "klovercloud-mongo-secret", Namespace: config.Namespace}, existingMongoSecret)
 	if err != nil && errors.IsNotFound(err) {
 		// Define a new deployment
-		err = descriptor.ApplyPrerequisites(r.Client, config.Namespace, config.Spec.Database, config.Spec.Security, string(config.Spec.Version))
+		err = descriptor.ApplyPrerequisites(r.Client, r.Scheme,config.Namespace, config.Spec.Database, config.Spec.Security, string(config.Spec.Version))
 		if err != nil {
 			log.Error(err, "Failed to apply Prerequisites.", err.Error())
 			return ctrl.Result{}, err
@@ -185,7 +185,7 @@ func (r *KlovercloudCDReconciler) Reconcile(ctx context.Context, req ctrl.Reques
 	err = r.Get(ctx, types.NamespacedName{Name: "klovercloud-api-service", Namespace: config.Namespace}, existingApiService)
 	if err != nil && errors.IsNotFound(err) {
 		// Define a new deployment
-		err = descriptor.ApplyApiService(r.Client, config.Namespace, config.Spec.ApiService, string(config.Spec.Version))
+		err = descriptor.ApplyApiService(r.Client,r.Scheme, config.Namespace, config.Spec.ApiService, string(config.Spec.Version))
 		if err != nil {
 			log.Error(err, "Failed to create new Deployment", "Deployment.Namespace", config.Namespace, "Deployment.Name", "klovercloud-api-service")
 			return ctrl.Result{}, err
@@ -262,7 +262,7 @@ func (r *KlovercloudCDReconciler) Reconcile(ctx context.Context, req ctrl.Reques
 	err = r.Get(ctx, types.NamespacedName{Name: "klovercloud-integration-manager", Namespace: config.Namespace}, existingIntegrationManager)
 	if err != nil && errors.IsNotFound(err) {
 		// Define a new deployment
-		err = descriptor.ApplyIntegrationManager(r.Client, config.Namespace, config.Spec.Database, config.Spec.IntegrationManager, string(config.Spec.Version))
+		err = descriptor.ApplyIntegrationManager(r.Client,r.Scheme, config.Namespace, config.Spec.Database, config.Spec.IntegrationManager, string(config.Spec.Version))
 		if err != nil {
 			log.Error(err, "Failed to create new Deployment", "Deployment.Namespace", config.Namespace, "Deployment.Name", "klovercloud-integration-manager")
 			return ctrl.Result{}, err
@@ -386,7 +386,7 @@ func (r *KlovercloudCDReconciler) Reconcile(ctx context.Context, req ctrl.Reques
 	err = r.Get(ctx, types.NamespacedName{Name: "klovercloud-ci-event-bank", Namespace: config.Namespace}, existingEventBank)
 	if err != nil && errors.IsNotFound(err) {
 		// Define a new deployment
-		err = descriptor.ApplyEventBank(r.Client, config.Namespace, config.Spec.Database, config.Spec.EventBank, string(config.Spec.Version))
+		err = descriptor.ApplyEventBank(r.Client,r.Scheme, config.Namespace, config.Spec.Database, config.Spec.EventBank, string(config.Spec.Version))
 		if err != nil {
 			log.Error(err, "Failed to create new Deployment", "Deployment.Namespace", config.Namespace, "Deployment.Name", "klovercloud-ci-event-bank")
 			return ctrl.Result{}, err
@@ -485,7 +485,7 @@ func (r *KlovercloudCDReconciler) Reconcile(ctx context.Context, req ctrl.Reques
 	err = r.Get(ctx, types.NamespacedName{Name: "klovercloud-ci-core", Namespace: config.Namespace}, existingCoreEngine)
 	if err != nil && errors.IsNotFound(err) {
 		// Define a new deployment
-		err = descriptor.ApplyCoreEngine(r.Client, config.Namespace, config.Spec.Database, config.Spec.CoreEngine, string(config.Spec.Version))
+		err = descriptor.ApplyCoreEngine(r.Client,r.Scheme, config.Namespace, config.Spec.Database, config.Spec.CoreEngine, string(config.Spec.Version))
 		if err != nil {
 			log.Error(err, "Failed to create new Deployment", "Deployment.Namespace", config.Namespace, "Deployment.Name", "klovercloud-ci-core")
 			return ctrl.Result{}, err
@@ -575,7 +575,7 @@ func (r *KlovercloudCDReconciler) Reconcile(ctx context.Context, req ctrl.Reques
 	err = r.Get(ctx, types.NamespacedName{Name: "klovercloud-security", Namespace: config.Namespace}, existingSecurity)
 	if err != nil && errors.IsNotFound(err) {
 		// Define a new deployment
-		err = descriptor.ApplySecurity(r.Client, config.Namespace, config.Spec.Database, config.Spec.Security, string(config.Spec.Version))
+		err = descriptor.ApplySecurity(r.Client,r.Scheme, config.Namespace,config.Spec.Security, string(config.Spec.Version))
 		if err != nil {
 			log.Error(err, "Failed to create new Deployment", "Deployment.Namespace", config.Namespace, "Deployment.Name", "klovercloud-security")
 			return ctrl.Result{}, err
@@ -635,7 +635,7 @@ func (r *KlovercloudCDReconciler) Reconcile(ctx context.Context, req ctrl.Reques
 		err = r.Get(ctx, types.NamespacedName{Name: "klovercloud-ci-light-house-command", Namespace: config.Namespace}, existingLightHouseCommand)
 		if err != nil && errors.IsNotFound(err) {
 			// Define a new deployment
-			err = descriptor.ApplyLightHouseCommand(r.Client, config.Namespace, config.Spec.Database, config.Spec.LightHouse.Command, string(config.Spec.Version))
+			err = descriptor.ApplyLightHouseCommand(r.Client,r.Scheme, config.Namespace, config.Spec.Database, config.Spec.LightHouse.Command, string(config.Spec.Version))
 			if err != nil {
 				log.Error(err, "Failed to create new Deployment", "Deployment.Namespace", config.Namespace, "Deployment.Name", "klovercloud-ci-light-house-command")
 				return ctrl.Result{}, err
@@ -732,7 +732,7 @@ func (r *KlovercloudCDReconciler) Reconcile(ctx context.Context, req ctrl.Reques
 		err = r.Get(ctx, types.NamespacedName{Name: "klovercloud-ci-light-house-query", Namespace: config.Namespace}, existingLightHouseQuery)
 		if err != nil && errors.IsNotFound(err) {
 			// Define a new deployment
-			err = descriptor.ApplyLightHouseQuery(r.Client, config.Namespace, config.Spec.Database, config.Spec.LightHouse.Query, string(config.Spec.Version))
+			err = descriptor.ApplyLightHouseQuery(r.Client,r.Scheme, config.Namespace, config.Spec.Database, config.Spec.LightHouse.Query, string(config.Spec.Version))
 			if err != nil {
 				log.Error(err, "Failed to create new Deployment", "Deployment.Namespace", config.Namespace, "Deployment.Name", "klovercloud-ci-light-house-query")
 				return ctrl.Result{}, err
@@ -830,7 +830,7 @@ func (r *KlovercloudCDReconciler) Reconcile(ctx context.Context, req ctrl.Reques
 	err = r.Get(ctx, types.NamespacedName{Name: "klovercloud-ci-agent", Namespace: config.Namespace}, existingAgent)
 	if err != nil && errors.IsNotFound(err) {
 		// Define a new deployment
-		err = descriptor.ApplyAgent(r.Client, r.Config, config.Namespace, config.Spec.Agent, string(config.Spec.Version))
+		err = descriptor.ApplyAgent(r.Client,r.Scheme, r.Config, config.Namespace, config.Spec.Agent, string(config.Spec.Version))
 		if err != nil {
 			log.Error(err, "Failed to create new Deployment", "Deployment.Namespace", config.Namespace, "Deployment.Name", "klovercloud-ci-agent")
 			return ctrl.Result{}, err
@@ -899,12 +899,12 @@ func (r *KlovercloudCDReconciler) Reconcile(ctx context.Context, req ctrl.Reques
 	}
 
 	if deployLightHouse {
-		err = descriptor.ApplyLightHouseCommand(r.Client, config.Namespace, config.Spec.Database, config.Spec.LightHouse.Command, string(config.Spec.Version))
+		err = descriptor.ApplyLightHouseCommand(r.Client,r.Scheme, config.Namespace, config.Spec.Database, config.Spec.LightHouse.Command, string(config.Spec.Version))
 		if err != nil {
 			log.Error(err, "Failed to create new Deployment", "Deployment.Namespace", config.Namespace, "Deployment.Name", "klovercloud-ci-light-house-command")
 			return ctrl.Result{}, err
 		}
-		err = descriptor.ApplyLightHouseQuery(r.Client, config.Namespace, config.Spec.Database, config.Spec.LightHouse.Query, string(config.Spec.Version))
+		err = descriptor.ApplyLightHouseQuery(r.Client, r.Scheme,config.Namespace, config.Spec.Database, config.Spec.LightHouse.Query, string(config.Spec.Version))
 		if err != nil {
 			log.Error(err, "Failed to create new Deployment", "Deployment.Namespace", config.Namespace, "Deployment.Name", "klovercloud-ci-light-house-query")
 			return ctrl.Result{}, err

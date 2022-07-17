@@ -175,6 +175,10 @@ spec:
               core_engine:
                 description: CoreEngine config of CoreEngine server
                 properties:
+                  number_of_con_current_process:
+                    description: NumberOfConCurrentProcess is the number of concurrent
+                      jobs for (build,jenkins,intermediary)
+                    type: integer
                   resources:
                     description: Resources defines cpu, memory requests and limits
                     properties:
@@ -206,6 +210,7 @@ spec:
                     format: int32
                     type: integer
                 required:
+                - number_of_con_current_process
                 - size
                 type: object
               db:

@@ -4,13 +4,13 @@ import (
 	"context"
 	"fmt"
 	"github.com/klovercloud-ci-cd/klovercloudcd-operator/api/v1alpha1"
-	"github.com/klovercloud-ci-cd/klovercloudcd-operator/controllers"
 	"github.com/klovercloud-ci-cd/klovercloudcd-operator/controllers/descriptor/v0_0_1_beta/service"
 	"github.com/klovercloud-ci-cd/klovercloudcd-operator/controllers/descriptor/v0_0_1_beta/utility"
 	"github.com/klovercloud-ci-cd/klovercloudcd-operator/enums"
 	"io/ioutil"
 	appv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/kubernetes/scheme"
 	"log"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -72,13 +72,13 @@ func (l lightHouseQuery) ModifyService(namespace string) service.LightHouseQuery
 	return l
 }
 
-func (l lightHouseQuery) Apply(wait bool) error {
+func (l lightHouseQuery) Apply(scheme *runtime.Scheme,wait bool) error {
 	if l.Error != nil {
 		return l.Error
 	}
 
 	config := &basev1alpha1.KlovercloudCD{}
-	ctrl.SetControllerReference(config, &l.Configmap, controllers.KlovercloudCDReconciler{}.Scheme)
+	ctrl.SetControllerReference(config, &l.Configmap, scheme)
 	err := l.ApplyConfigMap()
 	if err != nil {
 		log.Println("[ERROR]: Failed to create configmap for light house query service.", "Deployment.Namespace", l.Deployment.Namespace, "Deployment.Name", l.Deployment.Name, err.Error())
@@ -100,7 +100,7 @@ func (l lightHouseQuery) Apply(wait bool) error {
 		}
 	}
 
-	ctrl.SetControllerReference(config, &l.Deployment, controllers.KlovercloudCDReconciler{}.Scheme)
+	ctrl.SetControllerReference(config, &l.Deployment, scheme)
 	err = l.ApplyDeployment()
 	if err != nil {
 		log.Println("[ERROR]: Failed to apply deployment for light house query service.", "Deployment.Namespace: ", l.Deployment.Namespace, " Deployment.Name: ", l.Deployment.Name+". ", err.Error())
@@ -113,7 +113,7 @@ func (l lightHouseQuery) Apply(wait bool) error {
 		}
 	}
 
-	ctrl.SetControllerReference(config, &l.Service, controllers.KlovercloudCDReconciler{}.Scheme)
+	ctrl.SetControllerReference(config, &l.Service, scheme)
 	err = l.ApplyService()
 	if err != nil {
 		log.Println("[ERROR]: Failed to apply service for light house query service.", "Deployment.Namespace: ", l.Deployment.Namespace, " Deployment.Name: ", l.Deployment.Name+". ", err.Error())

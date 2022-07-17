@@ -4,12 +4,12 @@ import (
 	"context"
 	"fmt"
 	"github.com/klovercloud-ci-cd/klovercloudcd-operator/api/v1alpha1"
-	"github.com/klovercloud-ci-cd/klovercloudcd-operator/controllers"
-	"github.com/klovercloud-ci-cd/klovercloudcd-operator/controllers/descriptor/service"
+	"github.com/klovercloud-ci-cd/klovercloudcd-operator/controllers/descriptor/v0_0_1_beta/service"
 	"github.com/klovercloud-ci-cd/klovercloudcd-operator/controllers/descriptor/v0_0_1_beta/utility"
 	"io/ioutil"
 	appv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/kubernetes/scheme"
 	"log"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -73,14 +73,14 @@ func (c console) ModifyService(namespace string) service.Console {
 	return c
 }
 
-func (c console) Apply(wait bool) error {
+func (c console) Apply(scheme *runtime.Scheme,wait bool) error {
 	if c.Error != nil {
 		return c.Error
 	}
 
 	config := &basev1alpha1.KlovercloudCD{}
 
-	ctrl.SetControllerReference(config, &c.Configmap, controllers.KlovercloudCDReconciler{}.Scheme)
+	ctrl.SetControllerReference(config, &c.Configmap, scheme)
 
 	err := c.ApplyConfigMap()
 	if err != nil {
@@ -103,7 +103,7 @@ func (c console) Apply(wait bool) error {
 		}
 	}
 
-	ctrl.SetControllerReference(config, &c.Deployment, controllers.KlovercloudCDReconciler{}.Scheme)
+	ctrl.SetControllerReference(config, &c.Deployment,scheme)
 	err = c.ApplyDeployment()
 	if err != nil {
 		log.Println("[ERROR]: Failed to apply deployment for console service.", "Deployment.Namespace: ", c.Deployment.Namespace, " Deployment.Name: ", c.Deployment.Name+". ", err.Error())
@@ -116,7 +116,7 @@ func (c console) Apply(wait bool) error {
 		}
 	}
 
-	ctrl.SetControllerReference(config, &c.Service, controllers.KlovercloudCDReconciler{}.Scheme)
+	ctrl.SetControllerReference(config, &c.Service, scheme)
 	err = c.ApplyService()
 	if err != nil {
 		log.Println("[ERROR]: Failed to apply service for console service.", "Deployment.Namespace: ", c.Deployment.Namespace, " Deployment.Name: ", c.Deployment.Name+". ", err.Error())

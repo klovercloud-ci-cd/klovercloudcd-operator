@@ -4,13 +4,13 @@ import (
 	"context"
 	"fmt"
 	"github.com/klovercloud-ci-cd/klovercloudcd-operator/api/v1alpha1"
-	"github.com/klovercloud-ci-cd/klovercloudcd-operator/controllers"
 	"github.com/klovercloud-ci-cd/klovercloudcd-operator/controllers/descriptor/v0_0_1_beta/service"
 	"github.com/klovercloud-ci-cd/klovercloudcd-operator/controllers/descriptor/v0_0_1_beta/utility"
 	"github.com/klovercloud-ci-cd/klovercloudcd-operator/enums"
 	"io/ioutil"
 	appv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/kubernetes/scheme"
 	"log"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -90,14 +90,14 @@ func (i integrationManager) ModifyService(namespace string) service.IntegrationM
 	return i
 }
 
-func (i integrationManager) Apply(wait bool) error {
+func (i integrationManager) Apply(scheme *runtime.Scheme,wait bool) error {
 	if i.Error != nil {
 		return i.Error
 	}
 
 	config := &basev1alpha1.KlovercloudCD{}
 
-	ctrl.SetControllerReference(config, &i.Configmap, controllers.KlovercloudCDReconciler{}.Scheme)
+	ctrl.SetControllerReference(config, &i.Configmap, scheme)
 	err := i.ApplyConfigMap()
 	if err != nil {
 		log.Println("[ERROR]: Failed to create configmap for security service.", "Deployment.Namespace", i.Deployment.Namespace, "Deployment.Name", i.Deployment.Name, err.Error())
@@ -122,7 +122,7 @@ func (i integrationManager) Apply(wait bool) error {
 		}
 	}
 
-	ctrl.SetControllerReference(config, &i.Deployment, controllers.KlovercloudCDReconciler{}.Scheme)
+	ctrl.SetControllerReference(config, &i.Deployment, scheme)
 	err = i.ApplyDeployment()
 	if err != nil {
 		log.Println("[ERROR]: Failed to apply deployment for security service.", "Deployment.Namespace: ", i.Deployment.Namespace, " Deployment.Name: ", i.Deployment.Name+". ", err.Error())
@@ -136,7 +136,7 @@ func (i integrationManager) Apply(wait bool) error {
 		}
 	}
 
-	ctrl.SetControllerReference(config, &i.Service, controllers.KlovercloudCDReconciler{}.Scheme)
+	ctrl.SetControllerReference(config, &i.Service, scheme)
 	err = i.ApplyService()
 	if err != nil {
 		log.Println("[ERROR]: Failed to apply service for security service.", "Deployment.Namespace: ", i.Deployment.Namespace, " Deployment.Name: ", i.Deployment.Name+". ", err.Error())
