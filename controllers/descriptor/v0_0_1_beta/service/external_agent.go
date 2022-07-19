@@ -7,12 +7,12 @@ import (
 
 type ExternalAgent interface {
 	ModifyClusterRole() ExternalAgent
-	ModifyClusterRoleBinding(namespace string,agent v1alpha1.Agent) ExternalAgent
-	ModifyServiceAccount(namespace string,agent v1alpha1.Agent) ExternalAgent
-	ModifyConfigmap(namespace string,agent v1alpha1.Agent) ExternalAgent
+	ModifyClusterRoleBinding(namespace string, agent v1alpha1.Agent) ExternalAgent
+	ModifyServiceAccount(namespace string, agent v1alpha1.Agent) ExternalAgent
+	ModifyConfigmap(namespace string, agent v1alpha1.Agent) ExternalAgent
 	ModifyDeployment(namespace string, agent v1alpha1.Agent) ExternalAgent
 	ModifyService(namespace string) ExternalAgent
-	Apply(scheme *runtime.Scheme,wait bool) error
+	Apply(config *v1alpha1.ExternalAgent, scheme *runtime.Scheme, wait bool) error
 	ApplyClusterRole() error
 	ApplyClusterRoleBinding() error
 	ApplyServiceAccount() error
@@ -20,4 +20,3 @@ type ExternalAgent interface {
 	ApplyDeployment() error
 	ApplyService() error
 }
-

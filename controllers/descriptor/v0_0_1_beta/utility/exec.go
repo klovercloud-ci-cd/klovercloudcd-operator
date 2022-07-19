@@ -10,11 +10,11 @@ import (
 	"k8s.io/client-go/tools/remotecommand"
 )
 
-func ExecuteRemoteCommand(restCfg *rest.Config,podName, namespace string,container string, commands []string) (data string, errData string, err error) {
+func ExecuteRemoteCommand(restCfg *rest.Config, podName, namespace string, container string, commands []string) (data string, errData string, err error) {
 	var commandArr []string
-	commandArr=append(commandArr, "/bin/sh")
-	commandArr=append(commandArr, "-c")
-	commandArr= append(commandArr, commands...)
+	commandArr = append(commandArr, "/bin/sh")
+	commandArr = append(commandArr, "-c")
+	commandArr = append(commandArr, commands...)
 	coreClient, err := kubernetes.NewForConfig(restCfg)
 	if err != nil {
 		return "", "", err
@@ -46,4 +46,3 @@ func ExecuteRemoteCommand(restCfg *rest.Config,podName, namespace string,contain
 
 	return buf.String(), errBuf.String(), nil
 }
-

@@ -1,40 +1,12 @@
-# Copyright 2019 The Tekton Authors
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-
 apiVersion: v1
 kind: Namespace
 metadata:
-  name: tekton-pipelines
+  name: klovercloud
   labels:
     app.kubernetes.io/instance: default
     app.kubernetes.io/part-of: tekton-pipelines
 
 ---
-# Copyright 2019 The Tekton Authors
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-
 apiVersion: policy/v1beta1
 kind: PodSecurityPolicy
 metadata:
@@ -80,20 +52,6 @@ spec:
         max: 65535
 
 ---
-# Copyright 2020 The Tekton Authors
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     https://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-
 kind: ClusterRole
 apiVersion: rbac.authorization.k8s.io/v1
 metadata:
@@ -204,34 +162,20 @@ rules:
     verbs: ["get"]
     # The webhook configured the namespace as the OwnerRef on various cluster-scoped resources,
     # which requires we can Get the system namespace.
-    resourceNames: ["tekton-pipelines"]
+    resourceNames: ["klovercloud"]
   - apiGroups: [""]
     resources: ["namespaces/finalizers"]
     verbs: ["update"]
     # The webhook configured the namespace as the OwnerRef on various cluster-scoped resources,
     # which requires we can update the system namespace finalizers.
-    resourceNames: ["tekton-pipelines"]
+    resourceNames: ["klovercloud"]
 
 ---
-# Copyright 2020 The Tekton Authors
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     https://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-
 kind: Role
 apiVersion: rbac.authorization.k8s.io/v1
 metadata:
   name: tekton-pipelines-controller
-  namespace: tekton-pipelines
+  namespace: klovercloud
   labels:
     app.kubernetes.io/component: controller
     app.kubernetes.io/instance: default
@@ -254,7 +198,7 @@ kind: Role
 apiVersion: rbac.authorization.k8s.io/v1
 metadata:
   name: tekton-pipelines-webhook
-  namespace: tekton-pipelines
+  namespace: klovercloud
   labels:
     app.kubernetes.io/component: webhook
     app.kubernetes.io/instance: default
@@ -287,7 +231,7 @@ kind: Role
 apiVersion: rbac.authorization.k8s.io/v1
 metadata:
   name: tekton-pipelines-leader-election
-  namespace: tekton-pipelines
+  namespace: klovercloud
   labels:
     app.kubernetes.io/instance: default
     app.kubernetes.io/part-of: tekton-pipelines
@@ -301,7 +245,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata:
   name: tekton-pipelines-info
-  namespace: tekton-pipelines
+  namespace: klovercloud
   labels:
     app.kubernetes.io/instance: default
     app.kubernetes.io/part-of: tekton-pipelines
@@ -316,24 +260,11 @@ rules:
     verbs: ["get"]
 
 ---
-# Copyright 2019 The Tekton Authors
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
 apiVersion: v1
 kind: ServiceAccount
 metadata:
   name: tekton-pipelines-controller
-  namespace: tekton-pipelines
+  namespace: klovercloud
   labels:
     app.kubernetes.io/component: controller
     app.kubernetes.io/instance: default
@@ -343,27 +274,13 @@ apiVersion: v1
 kind: ServiceAccount
 metadata:
   name: tekton-pipelines-webhook
-  namespace: tekton-pipelines
+  namespace: klovercloud
   labels:
     app.kubernetes.io/component: webhook
     app.kubernetes.io/instance: default
     app.kubernetes.io/part-of: tekton-pipelines
 
 ---
-# Copyright 2019 The Tekton Authors
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
@@ -375,16 +292,12 @@ metadata:
 subjects:
   - kind: ServiceAccount
     name: tekton-pipelines-controller
-    namespace: tekton-pipelines
+    namespace: klovercloud
 roleRef:
   kind: ClusterRole
   name: tekton-pipelines-controller-cluster-access
   apiGroup: rbac.authorization.k8s.io
 ---
-# If this ClusterRoleBinding is replaced with a RoleBinding
-# then the ClusterRole would be namespaced. The access described by
-# the tekton-pipelines-controller-tenant-access ClusterRole would
-# be scoped to individual tenant namespaces.
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
@@ -396,7 +309,7 @@ metadata:
 subjects:
   - kind: ServiceAccount
     name: tekton-pipelines-controller
-    namespace: tekton-pipelines
+    namespace: klovercloud
 roleRef:
   kind: ClusterRole
   name: tekton-pipelines-controller-tenant-access
@@ -413,32 +326,18 @@ metadata:
 subjects:
   - kind: ServiceAccount
     name: tekton-pipelines-webhook
-    namespace: tekton-pipelines
+    namespace: klovercloud
 roleRef:
   kind: ClusterRole
   name: tekton-pipelines-webhook-cluster-access
   apiGroup: rbac.authorization.k8s.io
 
 ---
-# Copyright 2020 The Tekton Authors
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-
 apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
   name: tekton-pipelines-controller
-  namespace: tekton-pipelines
+  namespace: klovercloud
   labels:
     app.kubernetes.io/component: controller
     app.kubernetes.io/instance: default
@@ -446,7 +345,7 @@ metadata:
 subjects:
   - kind: ServiceAccount
     name: tekton-pipelines-controller
-    namespace: tekton-pipelines
+    namespace: klovercloud
 roleRef:
   kind: Role
   name: tekton-pipelines-controller
@@ -456,7 +355,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
   name: tekton-pipelines-webhook
-  namespace: tekton-pipelines
+  namespace: klovercloud
   labels:
     app.kubernetes.io/component: webhook
     app.kubernetes.io/instance: default
@@ -464,7 +363,7 @@ metadata:
 subjects:
   - kind: ServiceAccount
     name: tekton-pipelines-webhook
-    namespace: tekton-pipelines
+    namespace: klovercloud
 roleRef:
   kind: Role
   name: tekton-pipelines-webhook
@@ -474,7 +373,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
   name: tekton-pipelines-controller-leaderelection
-  namespace: tekton-pipelines
+  namespace: klovercloud
   labels:
     app.kubernetes.io/component: controller
     app.kubernetes.io/instance: default
@@ -482,7 +381,7 @@ metadata:
 subjects:
   - kind: ServiceAccount
     name: tekton-pipelines-controller
-    namespace: tekton-pipelines
+    namespace: klovercloud
 roleRef:
   kind: Role
   name: tekton-pipelines-leader-election
@@ -492,7 +391,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
   name: tekton-pipelines-webhook-leaderelection
-  namespace: tekton-pipelines
+  namespace: klovercloud
   labels:
     app.kubernetes.io/component: webhook
     app.kubernetes.io/instance: default
@@ -500,7 +399,7 @@ metadata:
 subjects:
   - kind: ServiceAccount
     name: tekton-pipelines-webhook
-    namespace: tekton-pipelines
+    namespace: klovercloud
 roleRef:
   kind: Role
   name: tekton-pipelines-leader-election
@@ -510,7 +409,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
   name: tekton-pipelines-info
-  namespace: tekton-pipelines
+  namespace: klovercloud
   labels:
     app.kubernetes.io/instance: default
     app.kubernetes.io/part-of: tekton-pipelines
@@ -526,20 +425,6 @@ roleRef:
   name: tekton-pipelines-info
 
 ---
-# Copyright 2019 The Tekton Authors
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     https://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-
 apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
@@ -603,23 +488,9 @@ spec:
       clientConfig:
         service:
           name: tekton-pipelines-webhook
-          namespace: tekton-pipelines
+          namespace: klovercloud
 
 ---
-# Copyright 2019 The Tekton Authors
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     https://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-
 apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
@@ -659,20 +530,6 @@ spec:
   scope: Namespaced
 
 ---
-# Copyright 2019 The Tekton Authors
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     https://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-
 apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
@@ -736,23 +593,9 @@ spec:
       clientConfig:
         service:
           name: tekton-pipelines-webhook
-          namespace: tekton-pipelines
+          namespace: klovercloud
 
 ---
-# Copyright 2019 The Tekton Authors
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     https://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-
 apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
@@ -845,23 +688,9 @@ spec:
       clientConfig:
         service:
           name: tekton-pipelines-webhook
-          namespace: tekton-pipelines
+          namespace: klovercloud
 
 ---
-# Copyright 2019 The Tekton Authors
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     https://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-
 apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
@@ -901,20 +730,6 @@ spec:
   scope: Namespaced
 
 ---
-# Copyright 2020 The Tekton Authors
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     https://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-
 apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
@@ -968,20 +783,6 @@ spec:
   scope: Namespaced
 
 ---
-# Copyright 2019 The Tekton Authors
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     https://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-
 apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
@@ -1045,23 +846,9 @@ spec:
       clientConfig:
         service:
           name: tekton-pipelines-webhook
-          namespace: tekton-pipelines
+          namespace: klovercloud
 
 ---
-# Copyright 2019 The Tekton Authors
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     https://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-
 apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
@@ -1154,28 +941,14 @@ spec:
       clientConfig:
         service:
           name: tekton-pipelines-webhook
-          namespace: tekton-pipelines
+          namespace: klovercloud
 
 ---
-# Copyright 2020 The Tekton Authors
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     https://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-
 apiVersion: v1
 kind: Secret
 metadata:
   name: webhook-certs
-  namespace: tekton-pipelines
+  namespace: klovercloud
   labels:
     app.kubernetes.io/component: webhook
     app.kubernetes.io/instance: default
@@ -1197,7 +970,7 @@ webhooks:
     clientConfig:
       service:
         name: tekton-pipelines-webhook
-        namespace: tekton-pipelines
+        namespace: klovercloud
     failurePolicy: Fail
     sideEffects: None
     name: validation.webhook.pipeline.tekton.dev
@@ -1216,7 +989,7 @@ webhooks:
     clientConfig:
       service:
         name: tekton-pipelines-webhook
-        namespace: tekton-pipelines
+        namespace: klovercloud
     failurePolicy: Fail
     sideEffects: None
     name: webhook.pipeline.tekton.dev
@@ -1235,7 +1008,7 @@ webhooks:
     clientConfig:
       service:
         name: tekton-pipelines-webhook
-        namespace: tekton-pipelines
+        namespace: klovercloud
     failurePolicy: Fail
     sideEffects: None
     name: config.webhook.pipeline.tekton.dev
@@ -1244,20 +1017,6 @@ webhooks:
         app.kubernetes.io/part-of: tekton-pipelines
 
 ---
-# Copyright 2019 The Tekton Authors
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     https://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
@@ -1288,20 +1047,6 @@ rules:
       - watch
 
 ---
-# Copyright 2019 The Tekton Authors
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     https://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
@@ -1326,25 +1071,11 @@ rules:
       - watch
 
 ---
-# Copyright 2019 The Tekton Authors
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     https://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-
 apiVersion: v1
 kind: ConfigMap
 metadata:
   name: config-artifact-bucket
-  namespace: tekton-pipelines
+  namespace: klovercloud
   labels:
     app.kubernetes.io/instance: default
     app.kubernetes.io/part-of: tekton-pipelines
@@ -1379,7 +1110,7 @@ apiVersion: v1
 kind: ConfigMap
 metadata:
   name: config-artifact-pvc
-  namespace: tekton-pipelines
+  namespace: klovercloud
   labels:
     app.kubernetes.io/instance: default
     app.kubernetes.io/part-of: tekton-pipelines
@@ -1391,25 +1122,11 @@ metadata:
 #   storageClassName: storage-class-name
 
 ---
-# Copyright 2019 The Tekton Authors
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     https://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-
 apiVersion: v1
 kind: ConfigMap
 metadata:
   name: config-defaults
-  namespace: tekton-pipelines
+  namespace: klovercloud
   labels:
     app.kubernetes.io/instance: default
     app.kubernetes.io/part-of: tekton-pipelines
@@ -1463,25 +1180,11 @@ data:
     #   emptyDir: {}
 
 ---
-# Copyright 2019 The Tekton Authors
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     https://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-
 apiVersion: v1
 kind: ConfigMap
 metadata:
   name: feature-flags
-  namespace: tekton-pipelines
+  namespace: klovercloud
   labels:
     app.kubernetes.io/instance: default
     app.kubernetes.io/part-of: tekton-pipelines
@@ -1544,25 +1247,11 @@ data:
   send-cloudevents-for-runs: "false"
 
 ---
-# Copyright 2021 The Tekton Authors
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     https://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-
 apiVersion: v1
 kind: ConfigMap
 metadata:
   name: pipelines-info
-  namespace: tekton-pipelines
+  namespace: klovercloud
   labels:
     app.kubernetes.io/instance: default
     app.kubernetes.io/part-of: tekton-pipelines
@@ -1575,25 +1264,11 @@ data:
   version: "v0.34.1"
 
 ---
-# Copyright 2020 Tekton Authors LLC
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     https://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-
 apiVersion: v1
 kind: ConfigMap
 metadata:
   name: config-leader-election
-  namespace: tekton-pipelines
+  namespace: klovercloud
   labels:
     app.kubernetes.io/instance: default
     app.kubernetes.io/part-of: tekton-pipelines
@@ -1604,25 +1279,11 @@ data:
   retry-period: "10s"
 
 ---
-# Copyright 2019 Tekton Authors LLC
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     https://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-
 apiVersion: v1
 kind: ConfigMap
 metadata:
   name: config-logging
-  namespace: tekton-pipelines
+  namespace: klovercloud
   labels:
     app.kubernetes.io/instance: default
     app.kubernetes.io/part-of: tekton-pipelines
@@ -1658,25 +1319,11 @@ data:
   loglevel.webhook: "info"
 
 ---
-# Copyright 2019 The Tekton Authors
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     https://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-
 apiVersion: v1
 kind: ConfigMap
 metadata:
   name: config-observability
-  namespace: tekton-pipelines
+  namespace: klovercloud
   labels:
     app.kubernetes.io/instance: default
     app.kubernetes.io/part-of: tekton-pipelines
@@ -1720,25 +1367,11 @@ data:
     metrics.pipelinerun.duration-type: "histogram"
 
 ---
-# Copyright 2020 Tekton Authors LLC
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     https://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-
 apiVersion: v1
 kind: ConfigMap
 metadata:
   name: config-registry-cert
-  namespace: tekton-pipelines
+  namespace: klovercloud
   labels:
     app.kubernetes.io/instance: default
     app.kubernetes.io/part-of: tekton-pipelines
@@ -1747,25 +1380,11 @@ metadata:
 #  cert: |
 
 ---
-# Copyright 2019 The Tekton Authors
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-
 apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: tekton-pipelines-controller
-  namespace: tekton-pipelines
+  namespace: klovercloud
   labels:
     app.kubernetes.io/name: controller
     app.kubernetes.io/component: controller
@@ -1814,16 +1433,16 @@ spec:
           args: [
             # These images are built on-demand by `ko resolve` and are replaced
             # by image references by digest.
-            "-kubeconfig-writer-image", "quay.io/klovercloud/tekton-releases-kubeconfigwriter:v0.0.1-beta", "-git-image", "quay.io/klovercloud/tekton-releases-git-init:v0.0.1-beta", "-entrypoint-image", "quay.io/klovercloud/tekton-releases-entrypoint:v0.0.1-beta", "-nop-image", "quay.io/klovercloud/tekton-releases-nop:v0.0.1-beta", "-imagedigest-exporter-image", "quay.io/klovercloud/tekton-releases-imagedigestexporter:v0.0.1-beta", "-pr-image", "quay.io/klovercloud/tekton-releases-pullrequest-init:v0.0.1-beta", "-workingdirinit-image", "quay.io/klovercloud/tekton-releases-workingdirinit:v0.0.1-beta",
+              "-kubeconfig-writer-image", "quay.io/klovercloud/tekton-releases-kubeconfigwriter:v0.0.1-beta", "-git-image", "quay.io/klovercloud/tekton-releases-git-init:v0.0.1-beta", "-entrypoint-image", "quay.io/klovercloud/tekton-releases-entrypoint:v0.0.1-beta", "-nop-image", "quay.io/klovercloud/tekton-releases-nop:v0.0.1-beta", "-imagedigest-exporter-image", "quay.io/klovercloud/tekton-releases-imagedigestexporter:v0.0.1-beta", "-pr-image", "quay.io/klovercloud/tekton-releases-pullrequest-init:v0.0.1-beta", "-workingdirinit-image", "quay.io/klovercloud/tekton-releases-workingdirinit:v0.0.1-beta",
             # This is gcr.io/google.com/cloudsdktool/cloud-sdk:302.0.0-slim
-            "-gsutil-image", "quay.io/klovercloud/tekton-releases-cloud-sdk:v0.0.1-beta",
+              "-gsutil-image", "quay.io/klovercloud/tekton-releases-cloud-sdk:v0.0.1-beta",
             # The shell image must be root in order to create directories and copy files to PVCs.
             # gcr.io/distroless/base:debug as of February 17, 2022
             # image shall not contains tag, so it will be supported on a runtime like cri-o
-            "-shell-image", "quay.io/klovercloud/tekton-releases-base:v0.0.1-beta",
+              "-shell-image", "quay.io/klovercloud/tekton-releases-base:v0.0.1-beta",
             # for script mode to work with windows we need a powershell image
             # pinning to nanoserver tag as of July 15 2021
-            "-shell-image-win", "mcr.microsoft.com/powershell:nanoserver@sha256:b6d5ff841b78bdf2dfed7550000fd4f3437385b8fa686ec0f010be24777654d6"]
+              "-shell-image-win", "mcr.microsoft.com/powershell:nanoserver@sha256:b6d5ff841b78bdf2dfed7550000fd4f3437385b8fa686ec0f010be24777654d6"]
           volumeMounts:
             - name: config-logging
               mountPath: /etc/config-logging
@@ -1911,7 +1530,7 @@ metadata:
     app: tekton-pipelines-controller
     version: "v0.34.1"
   name: tekton-pipelines-controller
-  namespace: tekton-pipelines
+  namespace: klovercloud
 spec:
   ports:
     - name: http-metrics
@@ -1930,25 +1549,11 @@ spec:
     app.kubernetes.io/part-of: tekton-pipelines
 
 ---
-# Copyright 2020 The Tekton Authors
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     https://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-
 apiVersion: autoscaling/v2beta1
 kind: HorizontalPodAutoscaler
 metadata:
   name: tekton-pipelines-webhook
-  namespace: tekton-pipelines
+  namespace: klovercloud
   labels:
     app.kubernetes.io/name: webhook
     app.kubernetes.io/component: webhook
@@ -1973,20 +1578,6 @@ spec:
         targetAverageUtilization: 100
 
 ---
-# Copyright 2020 The Tekton Authors
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     https://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -1994,7 +1585,7 @@ metadata:
   # config/400-webhook-service.yaml. If you change this name, you must also
   # change the value of WEBHOOK_SERVICE_NAME below.
   name: tekton-pipelines-webhook
-  namespace: tekton-pipelines
+  namespace: klovercloud
   labels:
     app.kubernetes.io/name: webhook
     app.kubernetes.io/component: webhook
@@ -2132,7 +1723,7 @@ metadata:
     app: tekton-pipelines-webhook
     version: "v0.34.1"
   name: tekton-pipelines-webhook
-  namespace: tekton-pipelines
+  namespace: klovercloud
 spec:
   ports:
     # Define metrics and profiling for them to be accessible within service meshes.

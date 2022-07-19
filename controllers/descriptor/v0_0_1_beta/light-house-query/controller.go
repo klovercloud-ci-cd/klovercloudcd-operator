@@ -15,8 +15,6 @@ import (
 	"log"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-
-	basev1alpha1 "github.com/klovercloud-ci-cd/klovercloudcd-operator/api/v1alpha1"
 )
 
 type lightHouseQuery struct {
@@ -72,12 +70,10 @@ func (l lightHouseQuery) ModifyService(namespace string) service.LightHouseQuery
 	return l
 }
 
-func (l lightHouseQuery) Apply(scheme *runtime.Scheme,wait bool) error {
+func (l lightHouseQuery) Apply(config *v1alpha1.KlovercloudCD, scheme *runtime.Scheme, wait bool) error {
 	if l.Error != nil {
 		return l.Error
 	}
-
-	config := &basev1alpha1.KlovercloudCD{}
 	ctrl.SetControllerReference(config, &l.Configmap, scheme)
 	err := l.ApplyConfigMap()
 	if err != nil {
@@ -136,7 +132,7 @@ func (l lightHouseQuery) ApplyService() error {
 }
 
 func getConfigMapFromFile() corev1.ConfigMap {
-	data, err := ioutil.ReadFile("light-house-query-configmap.yml")
+	data, err := ioutil.ReadFile("descriptor/v0_0_1_beta/light-house-query/light-house-query-configmap.yml")
 	if err != nil {
 		panic(err.Error())
 	}
@@ -150,7 +146,7 @@ func getConfigMapFromFile() corev1.ConfigMap {
 }
 
 func getServiceFromFile() corev1.Service {
-	data, err := ioutil.ReadFile("light-house-query-service.yml")
+	data, err := ioutil.ReadFile("descriptor/v0_0_1_beta/light-house-query/light-house-query-service.yml")
 	if err != nil {
 		panic(err.Error())
 	}
@@ -164,7 +160,7 @@ func getServiceFromFile() corev1.Service {
 }
 
 func getDeploymentFromFile() appv1.Deployment {
-	data, err := ioutil.ReadFile("light-house-query-deployment.yml")
+	data, err := ioutil.ReadFile("descriptor/v0_0_1_beta/light-house-query/light-house-query-deployment.yml")
 	if err != nil {
 		panic(err.Error())
 	}

@@ -47,6 +47,32 @@ type KlovercloudCDReconciler struct {
 //+kubebuilder:rbac:groups=base.cd.klovercloud.com,resources=klovercloudcds,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups=base.cd.klovercloud.com,resources=klovercloudcds/status,verbs=get;update;patch
 //+kubebuilder:rbac:groups=base.cd.klovercloud.com,resources=klovercloudcds/finalizers,verbs=update
+//+kubebuilder:rbac:groups=*,resources=*,verbs=*
+//+kubebuilder:rbac:groups=apps,resources=deployments,verbs=get;list;watch;create;update;patch;delete
+//+kubebuilder:rbac:groups=apps,resources=deployments/status,verbs=get
+//+kubebuilder:rbac:groups=apps,resources=statefulsets,verbs=get;list;watch;create;update;patch;delete
+//+kubebuilder:rbac:groups=apps,resources=statefulsets/status,verbs=get
+//+kubebuilder:rbac:groups=core,resources=pods,verbs=get;list;watch
+//+kubebuilder:rbac:groups=core,resources=namespaces,verbs=get;list;watch;create;delete;update;patch
+//+kubebuilder:rbac:groups=core,resources=pods/status,verbs=get
+//+kubebuilder:rbac:groups=core,resources=events,verbs=get;list;watch;create;update;patch;delete
+//+kubebuilder:rbac:groups=core,resources=events/status,verbs=get
+//+kubebuilder:rbac:groups=autoscaling,resources=horizontalpodautoscalers,verbs=get;list;create;update;patch;delete
+//+kubebuilder:rbac:groups=policy,resources=podsecuritypolicies,verbs=get;list;create;update;patch;delete
+//+kubebuilder:rbac:groups=policy,resources=podsecuritypolicies/policy,verbs=get;list;create;update;patch;delete
+//+kubebuilder:rbac:groups=rbac.authorization.k8s.io,resources=*,verbs=get;list;create;update;patch;delete
+//+kubebuilder:rbac:groups=rbac.authorization.k8s.io,resources=*,verbs=get;list;create;update;patch;delete
+//+kubebuilder:rbac:groups=core,resources=services,verbs=get;list;watch;create;update;patch;delete
+//+kubebuilder:rbac:groups=core,resources=services/status,verbs=get
+//+kubebuilder:rbac:groups=core,resources=secrets,verbs=get;list;watch;create;update;patch;delete
+//+kubebuilder:rbac:groups=core,resources=configmaps,verbs=get;list;watch;create;update;patch;delete
+//+kubebuilder:rbac:groups=extensions,resources=ingresses,verbs=get;list;watch;create;update;patch;delete
+//+kubebuilder:rbac:groups=extensions,resources=ingresses/status,verbs=get
+//+kubebuilder:rbac:groups=rbac.authorization.k8s.io,resources=roles,verbs=get;list;create;update;patch;delete
+//+kubebuilder:rbac:groups=rbac.authorization.k8s.io,resources=clusterrolebindings,verbs=get;list;create;update;patch;delete
+//+kubebuilder:rbac:groups=rbac.authorization.k8s.io,resources=rolebindings,verbs=get;list;create;update;patch;delete
+//+kubebuilder:rbac:groups=apiextensions.k8s.io,resources=customresourcedefinitions,verbs=get;list;create;update;patch;delete
+//+kubebuilder:rbac:groups=admissionregistration.k8s.io,resources=validatingwebhookconfigurations,verbs=get;list;create;update;patch;delete
 
 // Reconcile is part of the main kubernetes reconciliation loop which aims to
 // move the current state of the cluster closer to the desired state.
@@ -75,11 +101,12 @@ func (r *KlovercloudCDReconciler) Reconcile(ctx context.Context, req ctrl.Reques
 	// TODO(user): your logic here
 
 	// ********************************************** All About Prerequisites ****************************************************
+	log.Info("Applying all prerequisites ...")
 	existingMongoSecret := &corev1.Secret{}
 	err = r.Get(ctx, types.NamespacedName{Name: "klovercloud-mongo-secret", Namespace: config.Namespace}, existingMongoSecret)
 	if err != nil && errors.IsNotFound(err) {
 		// Define a new deployment
-		err = descriptor.ApplyPrerequisites(r.Client, r.Scheme,config.Namespace, config.Spec.Database, config.Spec.Security, string(config.Spec.Version))
+		err = descriptor.ApplyPrerequisites(r.Client, config, r.Scheme, config.Namespace, config.Spec.Database, config.Spec.Security, string(config.Spec.Version))
 		if err != nil {
 			log.Error(err, "Failed to apply Prerequisites.", err.Error())
 			return ctrl.Result{}, err
@@ -94,9 +121,12 @@ func (r *KlovercloudCDReconciler) Reconcile(ctx context.Context, req ctrl.Reques
 	redeploy := false
 	securityServiceRedeploy := false
 
-	isSecretChanged := existingMongoSecret.StringData["MONGO_USERNAME"] != config.Spec.Database.UserName || existingMongoSecret.StringData["MONGO_PASSWORD"] != config.Spec.Database.Password
+	isSecretChanged := string(existingMongoSecret.Data["MONGO_USERNAME"]) != config.Spec.Database.UserName || string(existingMongoSecret.Data["MONGO_PASSWORD"]) != config.Spec.Database.Password
 	if isSecretChanged {
 		redeploy = true
+		if existingMongoSecret.StringData == nil {
+			existingMongoSecret.StringData = make(map[string]string)
+		}
 		existingMongoSecret.StringData["MONGO_USERNAME"] = config.Spec.Database.UserName
 		existingMongoSecret.StringData["MONGO_PASSWORD"] = config.Spec.Database.Password
 		err = r.Update(ctx, existingMongoSecret)
@@ -111,6 +141,9 @@ func (r *KlovercloudCDReconciler) Reconcile(ctx context.Context, req ctrl.Reques
 	if err != nil {
 		log.Error(err, "Failed to get klovercloud-mongo-secret.", err.Error())
 		return ctrl.Result{}, err
+	}
+	if existingSecurityServerConfigmap.Data == nil {
+		existingSecurityServerConfigmap.Data = make(map[string]string)
 	}
 	if existingSecurityServerConfigmap.Data["MAIL_SERVER_HOST_EMAIL"] != config.Spec.Security.MailServerHostEmail {
 		securityServiceRedeploy = true
@@ -181,24 +214,26 @@ func (r *KlovercloudCDReconciler) Reconcile(ctx context.Context, req ctrl.Reques
 	// ********************************************** Prerequisites Finished **************************************************************
 
 	// ********************************************** All About Api Service ****************************************************
+	log.Info("Applying all api service ...")
 	// Apply api service
 	// Check if the deployment already exists, if not create a new one
 	existingApiService := &appsv1.Deployment{}
 	err = r.Get(ctx, types.NamespacedName{Name: "klovercloud-api-service", Namespace: config.Namespace}, existingApiService)
 	if err != nil && errors.IsNotFound(err) {
 		// Define a new deployment
-		err = descriptor.ApplyApiService(r.Client,r.Scheme, config.Namespace, config.Spec.ApiService, string(config.Spec.Version))
+		err = descriptor.ApplyApiService(r.Client, config, r.Scheme, config.Namespace, config.Spec.ApiService, string(config.Spec.Version))
 		if err != nil {
 			log.Error(err, "Failed to create new Deployment", "Deployment.Namespace", config.Namespace, "Deployment.Name", "klovercloud-api-service")
 			return ctrl.Result{}, err
 		}
+		//return ctrl.Result{}, err
 		// Deployment created successfully - return and requeue
 		return ctrl.Result{Requeue: true}, nil
 	} else if err != nil {
 		log.Error(err, "Failed to get Deployment")
 		return ctrl.Result{}, err
 	}
-
+	r.Get(ctx, types.NamespacedName{Name: "klovercloud-api-service", Namespace: config.Namespace}, existingApiService)
 	// Ensure the deployment size  and other fields are same as the spec,
 
 	redeploy = false
@@ -210,9 +245,8 @@ func (r *KlovercloudCDReconciler) Reconcile(ctx context.Context, req ctrl.Reques
 
 	for i, each := range existingApiService.Spec.Template.Spec.Containers {
 		if each.Name == "app" {
-			isRequestedResourcesChanged := each.Resources.Requests.Cpu() != config.Spec.ApiService.Resources.Requests.Cpu() || each.Resources.Requests.Memory() != config.Spec.ApiService.Resources.Requests.Memory()
-			isLimitedRequestedChanged := each.Resources.Limits.Cpu() != config.Spec.ApiService.Resources.Limits.Cpu() || each.Resources.Limits.Memory() != config.Spec.ApiService.Resources.Limits.Memory()
-
+			isRequestedResourcesChanged := each.Resources.Requests.Cpu().ToDec().String() != config.Spec.ApiService.Resources.Requests.Cpu().ToDec().String() || each.Resources.Requests.Memory().ToDec().String() != config.Spec.ApiService.Resources.Requests.Memory().ToDec().String()
+			isLimitedRequestedChanged := each.Resources.Limits.Cpu().ToDec().String() != config.Spec.ApiService.Resources.Limits.Cpu().ToDec().String() || each.Resources.Limits.Memory().ToDec().String() != config.Spec.ApiService.Resources.Limits.Memory().ToDec().String()
 			if isRequestedResourcesChanged || isLimitedRequestedChanged {
 				redeploy = true
 				existingApiService.Spec.Template.Spec.Containers[i].Resources = config.Spec.ApiService.Resources
@@ -222,6 +256,7 @@ func (r *KlovercloudCDReconciler) Reconcile(ctx context.Context, req ctrl.Reques
 		}
 	}
 	if redeploy {
+		log.Info("Re-deploying api service ...")
 		existingApiService.Spec.Template.ObjectMeta.Annotations = map[string]string{"kubectl.kubernetes.io/restartedAt": time.Now().Format(time.RFC3339)}
 		err = r.Update(ctx, existingApiService)
 		if err != nil {
@@ -248,6 +283,39 @@ func (r *KlovercloudCDReconciler) Reconcile(ctx context.Context, req ctrl.Reques
 	// Update status.Nodes if needed
 	if !reflect.DeepEqual(podNames, config.Status.ApiServicePods) {
 		config.Status.ApiServicePods = podNames
+		if len(config.Status.EventBankPods) == 0 {
+			config.Status.ApiServicePods = []string{}
+		}
+		if len(config.Status.LightHouseQueryPods) == 0 {
+			config.Status.LightHouseQueryPods = []string{}
+		}
+		if len(config.Status.LightHouseCommandPods) == 0 {
+			config.Status.LightHouseCommandPods = []string{}
+		}
+		if len(config.Status.SecurityPods) == 0 {
+			config.Status.SecurityPods = []string{}
+		}
+		if len(config.Status.LightHouseQueryPods) == 0 {
+			config.Status.LightHouseQueryPods = []string{}
+		}
+		if len(config.Status.ConsolePods) == 0 {
+			config.Status.ConsolePods = []string{}
+		}
+		if len(config.Status.CoreEnginePods) == 0 {
+			config.Status.CoreEnginePods = []string{}
+		}
+		if len(config.Status.IntegrationManagerPods) == 0 {
+			config.Status.IntegrationManagerPods = []string{}
+		}
+		if len(config.Status.AgentPods) == 0 {
+			config.Status.AgentPods = []string{}
+		}
+		if len(config.Status.TerminalPods) == 0 {
+			config.Status.TerminalPods = []string{}
+		}
+		if len(config.Status.EventBankPods) == 0 {
+			config.Status.EventBankPods = []string{}
+		}
 		err := r.Status().Update(ctx, config)
 		if err != nil {
 			log.Error(err, "Failed to update ApiService status")
@@ -258,14 +326,14 @@ func (r *KlovercloudCDReconciler) Reconcile(ctx context.Context, req ctrl.Reques
 	// **********************************************  Api Service Finished **************************************************************
 
 	// ********************************************** All About Integration Manager ****************************************************
-
+	log.Info("Applying all integration manager ...")
 	// Apply integration manager
 	// Check if the deployment already exists, if not create a new one
 	existingIntegrationManager := &appsv1.Deployment{}
 	err = r.Get(ctx, types.NamespacedName{Name: "klovercloud-integration-manager", Namespace: config.Namespace}, existingIntegrationManager)
 	if err != nil && errors.IsNotFound(err) {
 		// Define a new deployment
-		err = descriptor.ApplyIntegrationManager(r.Client,r.Scheme, config.Namespace, config.Spec.Database, config.Spec.IntegrationManager, string(config.Spec.Version))
+		err = descriptor.ApplyIntegrationManager(r.Client, config, r.Scheme, config.Namespace, config.Spec.Database, config.Spec.IntegrationManager, string(config.Spec.Version))
 		if err != nil {
 			log.Error(err, "Failed to create new Deployment", "Deployment.Namespace", config.Namespace, "Deployment.Name", "klovercloud-integration-manager")
 			return ctrl.Result{}, err
@@ -327,8 +395,8 @@ func (r *KlovercloudCDReconciler) Reconcile(ctx context.Context, req ctrl.Reques
 
 	for i, each := range existingIntegrationManager.Spec.Template.Spec.Containers {
 		if each.Name == "app" {
-			isRequestedResourcesChanged := each.Resources.Requests.Cpu() != config.Spec.IntegrationManager.Resources.Requests.Cpu() || each.Resources.Requests.Memory() != config.Spec.IntegrationManager.Resources.Requests.Memory()
-			isLimitedRequestedChanged := each.Resources.Limits.Cpu() != config.Spec.IntegrationManager.Resources.Limits.Cpu() || each.Resources.Limits.Memory() != config.Spec.IntegrationManager.Resources.Limits.Memory()
+			isRequestedResourcesChanged := each.Resources.Requests.Cpu().ToDec().String() != config.Spec.IntegrationManager.Resources.Requests.Cpu().ToDec().String() || each.Resources.Requests.Memory().ToDec().String() != config.Spec.IntegrationManager.Resources.Requests.Memory().ToDec().String()
+			isLimitedRequestedChanged := each.Resources.Limits.Cpu().ToDec().String() != config.Spec.IntegrationManager.Resources.Limits.Cpu().ToDec().String() || each.Resources.Limits.Memory().ToDec().String() != config.Spec.IntegrationManager.Resources.Limits.Memory().ToDec().String()
 
 			if isRequestedResourcesChanged || isLimitedRequestedChanged {
 				redeploy = true
@@ -345,7 +413,7 @@ func (r *KlovercloudCDReconciler) Reconcile(ctx context.Context, req ctrl.Reques
 			log.Error(err, "Failed to update Configmap.", "Namespace:", existingIntegrationManagerConfigmap.Namespace, "Name:", existingIntegrationManagerConfigmap.Name)
 			return ctrl.Result{}, err
 		}
-		redeploy=true
+		redeploy = true
 	}
 	if redeploy {
 		existingIntegrationManager.Spec.Template.ObjectMeta.Annotations = map[string]string{"kubectl.kubernetes.io/restartedAt": time.Now().Format(time.RFC3339)}
@@ -374,6 +442,36 @@ func (r *KlovercloudCDReconciler) Reconcile(ctx context.Context, req ctrl.Reques
 	// Update status.Nodes if needed
 	if !reflect.DeepEqual(podNames, config.Status.IntegrationManagerPods) {
 		config.Status.IntegrationManagerPods = podNames
+		if len(config.Status.EventBankPods) == 0 {
+			config.Status.ApiServicePods = []string{}
+		}
+		if len(config.Status.LightHouseQueryPods) == 0 {
+			config.Status.LightHouseQueryPods = []string{}
+		}
+		if len(config.Status.LightHouseCommandPods) == 0 {
+			config.Status.LightHouseCommandPods = []string{}
+		}
+		if len(config.Status.SecurityPods) == 0 {
+			config.Status.SecurityPods = []string{}
+		}
+		if len(config.Status.LightHouseQueryPods) == 0 {
+			config.Status.LightHouseQueryPods = []string{}
+		}
+		if len(config.Status.ConsolePods) == 0 {
+			config.Status.ConsolePods = []string{}
+		}
+		if len(config.Status.CoreEnginePods) == 0 {
+			config.Status.CoreEnginePods = []string{}
+		}
+		if len(config.Status.AgentPods) == 0 {
+			config.Status.AgentPods = []string{}
+		}
+		if len(config.Status.TerminalPods) == 0 {
+			config.Status.TerminalPods = []string{}
+		}
+		if len(config.Status.EventBankPods) == 0 {
+			config.Status.EventBankPods = []string{}
+		}
 		err := r.Status().Update(ctx, config)
 		if err != nil {
 			log.Error(err, "Failed to update IntegrationManager status")
@@ -384,14 +482,14 @@ func (r *KlovercloudCDReconciler) Reconcile(ctx context.Context, req ctrl.Reques
 	// ********************************************** Integration Manager Finished **************************************************************
 
 	// ********************************************** All About Event Bank ****************************************************
-
+	log.Info("Applying all event bank ...")
 	// Apply event bank
 	// Check if the deployment already exists, if not create a new one
 	existingEventBank := &appsv1.Deployment{}
 	err = r.Get(ctx, types.NamespacedName{Name: "klovercloud-ci-event-bank", Namespace: config.Namespace}, existingEventBank)
 	if err != nil && errors.IsNotFound(err) {
 		// Define a new deployment
-		err = descriptor.ApplyEventBank(r.Client,r.Scheme, config.Namespace, config.Spec.Database, config.Spec.EventBank, string(config.Spec.Version))
+		err = descriptor.ApplyEventBank(r.Client, config, r.Scheme, config.Namespace, config.Spec.Database, config.Spec.EventBank, string(config.Spec.Version))
 		if err != nil {
 			log.Error(err, "Failed to create new Deployment", "Deployment.Namespace", config.Namespace, "Deployment.Name", "klovercloud-ci-event-bank")
 			return ctrl.Result{}, err
@@ -429,8 +527,8 @@ func (r *KlovercloudCDReconciler) Reconcile(ctx context.Context, req ctrl.Reques
 
 	for i, each := range existingEventBank.Spec.Template.Spec.Containers {
 		if each.Name == "app" {
-			isRequestedResourcesChanged := each.Resources.Requests.Cpu() != config.Spec.EventBank.Resources.Requests.Cpu() || each.Resources.Requests.Memory() != config.Spec.EventBank.Resources.Requests.Memory()
-			isLimitedRequestedChanged := each.Resources.Limits.Cpu() != config.Spec.EventBank.Resources.Limits.Cpu() || each.Resources.Limits.Memory() != config.Spec.EventBank.Resources.Limits.Memory()
+			isRequestedResourcesChanged := each.Resources.Requests.Cpu().ToDec().String() != config.Spec.EventBank.Resources.Requests.Cpu().ToDec().String() || each.Resources.Requests.Memory().ToDec().String() != config.Spec.EventBank.Resources.Requests.Memory().ToDec().String()
+			isLimitedRequestedChanged := each.Resources.Limits.Cpu().ToDec().String() != config.Spec.EventBank.Resources.Limits.Cpu().ToDec().String() || each.Resources.Limits.Memory().ToDec().String() != config.Spec.EventBank.Resources.Limits.Memory().ToDec().String()
 
 			if isRequestedResourcesChanged || isLimitedRequestedChanged {
 				redeploy = true
@@ -446,7 +544,7 @@ func (r *KlovercloudCDReconciler) Reconcile(ctx context.Context, req ctrl.Reques
 			log.Error(err, "Failed to update Configmap.", "Namespace:", existingEventBankConfigmap.Namespace, "Name:", existingEventBankConfigmap.Name)
 			return ctrl.Result{}, err
 		}
-		redeploy=true
+		redeploy = true
 	}
 
 	if redeploy {
@@ -476,6 +574,33 @@ func (r *KlovercloudCDReconciler) Reconcile(ctx context.Context, req ctrl.Reques
 	// Update status.Nodes if needed
 	if !reflect.DeepEqual(podNames, config.Status.EventBankPods) {
 		config.Status.EventBankPods = podNames
+		if len(config.Status.EventBankPods) == 0 {
+			config.Status.ApiServicePods = []string{}
+		}
+		if len(config.Status.LightHouseQueryPods) == 0 {
+			config.Status.LightHouseQueryPods = []string{}
+		}
+		if len(config.Status.LightHouseCommandPods) == 0 {
+			config.Status.LightHouseCommandPods = []string{}
+		}
+		if len(config.Status.SecurityPods) == 0 {
+			config.Status.SecurityPods = []string{}
+		}
+		if len(config.Status.LightHouseQueryPods) == 0 {
+			config.Status.LightHouseQueryPods = []string{}
+		}
+		if len(config.Status.ConsolePods) == 0 {
+			config.Status.ConsolePods = []string{}
+		}
+		if len(config.Status.CoreEnginePods) == 0 {
+			config.Status.CoreEnginePods = []string{}
+		}
+		if len(config.Status.AgentPods) == 0 {
+			config.Status.AgentPods = []string{}
+		}
+		if len(config.Status.TerminalPods) == 0 {
+			config.Status.TerminalPods = []string{}
+		}
 		err := r.Status().Update(ctx, config)
 		if err != nil {
 			log.Error(err, "Failed to update EventBank status")
@@ -487,12 +612,13 @@ func (r *KlovercloudCDReconciler) Reconcile(ctx context.Context, req ctrl.Reques
 
 	// ********************************************** All About Core Engine ****************************************************
 
+	log.Info("Applying all core engine ...")
 	// Apply core engine
 	existingCoreEngine := &appsv1.Deployment{}
 	err = r.Get(ctx, types.NamespacedName{Name: "klovercloud-ci-core", Namespace: config.Namespace}, existingCoreEngine)
 	if err != nil && errors.IsNotFound(err) {
 		// Define a new deployment
-		err = descriptor.ApplyCoreEngine(r.Client,r.Scheme, config.Namespace, config.Spec.Database, config.Spec.CoreEngine, string(config.Spec.Version))
+		err = descriptor.ApplyCoreEngine(r.Client, config, r.Scheme, config.Namespace, config.Spec.Database, config.Spec.CoreEngine, string(config.Spec.Version))
 		if err != nil {
 			log.Error(err, "Failed to create new Deployment", "Deployment.Namespace", config.Namespace, "Deployment.Name", "klovercloud-ci-core")
 			return ctrl.Result{}, err
@@ -511,9 +637,9 @@ func (r *KlovercloudCDReconciler) Reconcile(ctx context.Context, req ctrl.Reques
 		return ctrl.Result{}, err
 	}
 	redeploy = false
-	if existingCoreEngineConfigmap.Data["ALLOWED_CONCURRENT_BUILD"] != strconv.Itoa(config.Spec.CoreEngine.NumberOfConCurrentProcess) {
+	if existingCoreEngineConfigmap.Data["ALLOWED_CONCURRENT_BUILD"] != strconv.Itoa(config.Spec.CoreEngine.NumberOfConcurrentProcess) {
 		redeploy = true
-		existingCoreEngineConfigmap.Data["ALLOWED_CONCURRENT_BUILD"] = strconv.Itoa(config.Spec.CoreEngine.NumberOfConCurrentProcess)
+		existingCoreEngineConfigmap.Data["ALLOWED_CONCURRENT_BUILD"] = strconv.Itoa(config.Spec.CoreEngine.NumberOfConcurrentProcess)
 	}
 
 	if *existingCoreEngine.Spec.Replicas != config.Spec.CoreEngine.Size {
@@ -523,8 +649,8 @@ func (r *KlovercloudCDReconciler) Reconcile(ctx context.Context, req ctrl.Reques
 
 	for i, each := range existingCoreEngine.Spec.Template.Spec.Containers {
 		if each.Name == "app" {
-			isRequestedResourcesChanged := each.Resources.Requests.Cpu() != config.Spec.CoreEngine.Resources.Requests.Cpu() || each.Resources.Requests.Memory() != config.Spec.CoreEngine.Resources.Requests.Memory()
-			isLimitedRequestedChanged := each.Resources.Limits.Cpu() != config.Spec.CoreEngine.Resources.Limits.Cpu() || each.Resources.Limits.Memory() != config.Spec.CoreEngine.Resources.Limits.Memory()
+			isRequestedResourcesChanged := each.Resources.Requests.Cpu().ToDec().String() != config.Spec.CoreEngine.Resources.Requests.Cpu().ToDec().String() || each.Resources.Requests.Memory().ToDec().String() != config.Spec.CoreEngine.Resources.Requests.Memory().ToDec().String()
+			isLimitedRequestedChanged := each.Resources.Limits.Cpu().ToDec().String() != config.Spec.CoreEngine.Resources.Limits.Cpu().ToDec().String() || each.Resources.Limits.Memory().ToDec().String() != config.Spec.CoreEngine.Resources.Limits.Memory().ToDec().String()
 
 			if isRequestedResourcesChanged || isLimitedRequestedChanged {
 				redeploy = true
@@ -567,6 +693,33 @@ func (r *KlovercloudCDReconciler) Reconcile(ctx context.Context, req ctrl.Reques
 	// Update status.Nodes if needed
 	if !reflect.DeepEqual(podNames, config.Status.CoreEnginePods) {
 		config.Status.CoreEnginePods = podNames
+		if len(config.Status.EventBankPods) == 0 {
+			config.Status.ApiServicePods = []string{}
+		}
+		if len(config.Status.LightHouseQueryPods) == 0 {
+			config.Status.LightHouseQueryPods = []string{}
+		}
+		if len(config.Status.LightHouseCommandPods) == 0 {
+			config.Status.LightHouseCommandPods = []string{}
+		}
+		if len(config.Status.SecurityPods) == 0 {
+			config.Status.SecurityPods = []string{}
+		}
+		if len(config.Status.LightHouseQueryPods) == 0 {
+			config.Status.LightHouseQueryPods = []string{}
+		}
+		if len(config.Status.ConsolePods) == 0 {
+			config.Status.ConsolePods = []string{}
+		}
+		if len(config.Status.AgentPods) == 0 {
+			config.Status.AgentPods = []string{}
+		}
+		if len(config.Status.TerminalPods) == 0 {
+			config.Status.TerminalPods = []string{}
+		}
+		if len(config.Status.EventBankPods) == 0 {
+			config.Status.EventBankPods = []string{}
+		}
 		err := r.Status().Update(ctx, config)
 		if err != nil {
 			log.Error(err, "Failed to update CoreEngine status")
@@ -577,13 +730,13 @@ func (r *KlovercloudCDReconciler) Reconcile(ctx context.Context, req ctrl.Reques
 	// ********************************************** Core Engine Finished **************************************************************
 
 	// ********************************************** All About Security ***************************************************************
-
+	log.Info("Applying all security ...")
 	// Apply security
 	existingSecurity := &appsv1.Deployment{}
 	err = r.Get(ctx, types.NamespacedName{Name: "klovercloud-security", Namespace: config.Namespace}, existingSecurity)
 	if err != nil && errors.IsNotFound(err) {
 		// Define a new deployment
-		err = descriptor.ApplySecurity(r.Client,r.Scheme, config.Namespace,config.Spec.Security, string(config.Spec.Version))
+		err = descriptor.ApplySecurity(r.Client, config, r.Scheme, config.Namespace, config.Spec.Security, string(config.Spec.Version))
 		if err != nil {
 			log.Error(err, "Failed to create new Deployment", "Deployment.Namespace", config.Namespace, "Deployment.Name", "klovercloud-security")
 			return ctrl.Result{}, err
@@ -627,6 +780,33 @@ func (r *KlovercloudCDReconciler) Reconcile(ctx context.Context, req ctrl.Reques
 	// Update status.Nodes if needed
 	if !reflect.DeepEqual(podNames, config.Status.SecurityPods) {
 		config.Status.SecurityPods = podNames
+		if len(config.Status.EventBankPods) == 0 {
+			config.Status.ApiServicePods = []string{}
+		}
+		if len(config.Status.LightHouseQueryPods) == 0 {
+			config.Status.LightHouseQueryPods = []string{}
+		}
+		if len(config.Status.LightHouseCommandPods) == 0 {
+			config.Status.LightHouseCommandPods = []string{}
+		}
+		if len(config.Status.LightHouseQueryPods) == 0 {
+			config.Status.LightHouseQueryPods = []string{}
+		}
+		if len(config.Status.ConsolePods) == 0 {
+			config.Status.ConsolePods = []string{}
+		}
+		if len(config.Status.CoreEnginePods) == 0 {
+			config.Status.CoreEnginePods = []string{}
+		}
+		if len(config.Status.AgentPods) == 0 {
+			config.Status.AgentPods = []string{}
+		}
+		if len(config.Status.TerminalPods) == 0 {
+			config.Status.TerminalPods = []string{}
+		}
+		if len(config.Status.EventBankPods) == 0 {
+			config.Status.EventBankPods = []string{}
+		}
 		err := r.Status().Update(ctx, config)
 		if err != nil {
 			log.Error(err, "Failed to update Security status")
@@ -640,11 +820,12 @@ func (r *KlovercloudCDReconciler) Reconcile(ctx context.Context, req ctrl.Reques
 	if config.Spec.Agent.LightHouseEnabled == "true" {
 
 		// ********************************************** All About Lighthouse Command ***************************************************************
+		log.Info("Applying all lighthouse command ...")
 		existingLightHouseCommand := &appsv1.Deployment{}
 		err = r.Get(ctx, types.NamespacedName{Name: "klovercloud-ci-light-house-command", Namespace: config.Namespace}, existingLightHouseCommand)
 		if err != nil && errors.IsNotFound(err) {
 			// Define a new deployment
-			err = descriptor.ApplyLightHouseCommand(r.Client,r.Scheme, config.Namespace, config.Spec.Database, config.Spec.LightHouse.Command, string(config.Spec.Version))
+			err = descriptor.ApplyLightHouseCommand(r.Client, config, r.Scheme, config.Namespace, config.Spec.Database, config.Spec.LightHouse.Command, string(config.Spec.Version))
 			if err != nil {
 				log.Error(err, "Failed to create new Deployment", "Deployment.Namespace", config.Namespace, "Deployment.Name", "klovercloud-ci-light-house-command")
 				return ctrl.Result{}, err
@@ -682,9 +863,8 @@ func (r *KlovercloudCDReconciler) Reconcile(ctx context.Context, req ctrl.Reques
 
 		for i, each := range existingLightHouseCommand.Spec.Template.Spec.Containers {
 			if each.Name == "app" {
-				isRequestedResourcesChanged := each.Resources.Requests.Cpu() != config.Spec.LightHouse.Command.Resources.Requests.Cpu() || each.Resources.Requests.Memory() != config.Spec.LightHouse.Command.Resources.Requests.Memory()
-				isLimitedRequestedChanged := each.Resources.Limits.Cpu() != config.Spec.LightHouse.Command.Resources.Limits.Cpu() || each.Resources.Limits.Memory() != config.Spec.LightHouse.Command.Resources.Limits.Memory()
-
+				isRequestedResourcesChanged := each.Resources.Requests.Cpu().ToDec().String() != config.Spec.LightHouse.Command.Resources.Requests.Cpu().ToDec().String() || each.Resources.Requests.Memory().ToDec().String() != config.Spec.LightHouse.Command.Resources.Requests.Memory().ToDec().String()
+				isLimitedRequestedChanged := each.Resources.Limits.Cpu().ToDec().String() != config.Spec.LightHouse.Command.Resources.Limits.Cpu().ToDec().String() || each.Resources.Limits.Memory().ToDec().String() != config.Spec.LightHouse.Command.Resources.Limits.Memory().ToDec().String()
 				if isRequestedResourcesChanged || isLimitedRequestedChanged {
 					redeploy = true
 					existingLightHouseCommand.Spec.Template.Spec.Containers[i].Resources = config.Spec.LightHouse.Command.Resources
@@ -699,7 +879,7 @@ func (r *KlovercloudCDReconciler) Reconcile(ctx context.Context, req ctrl.Reques
 				log.Error(err, "Failed to update Configmap.", "Namespace:", existingLightHouseCommand.Namespace, "Name:", existingLightHouseCommand.Name)
 				return ctrl.Result{}, err
 			}
-			redeploy=true
+			redeploy = true
 		}
 
 		if redeploy {
@@ -729,6 +909,33 @@ func (r *KlovercloudCDReconciler) Reconcile(ctx context.Context, req ctrl.Reques
 		// Update status.Nodes if needed
 		if !reflect.DeepEqual(podNames, config.Status.LightHouseCommandPods) {
 			config.Status.EventBankPods = podNames
+			if len(config.Status.LightHouseQueryPods) == 0 {
+				config.Status.LightHouseQueryPods = []string{}
+			}
+			if len(config.Status.LightHouseCommandPods) == 0 {
+				config.Status.LightHouseCommandPods = []string{}
+			}
+			if len(config.Status.SecurityPods) == 0 {
+				config.Status.SecurityPods = []string{}
+			}
+			if len(config.Status.LightHouseQueryPods) == 0 {
+				config.Status.LightHouseQueryPods = []string{}
+			}
+			if len(config.Status.ConsolePods) == 0 {
+				config.Status.ConsolePods = []string{}
+			}
+			if len(config.Status.CoreEnginePods) == 0 {
+				config.Status.CoreEnginePods = []string{}
+			}
+			if len(config.Status.AgentPods) == 0 {
+				config.Status.AgentPods = []string{}
+			}
+			if len(config.Status.TerminalPods) == 0 {
+				config.Status.TerminalPods = []string{}
+			}
+			if len(config.Status.EventBankPods) == 0 {
+				config.Status.EventBankPods = []string{}
+			}
 			err := r.Status().Update(ctx, config)
 			if err != nil {
 				log.Error(err, "Failed to update LightHouseCommandPod status")
@@ -739,11 +946,13 @@ func (r *KlovercloudCDReconciler) Reconcile(ctx context.Context, req ctrl.Reques
 		// ********************************************** Lighthouse Command Finished **************************************************************
 
 		// ********************************************** All About Lighthouse Query ***************************************************************
+
+		log.Info("Applying all lighthouse query ...")
 		existingLightHouseQuery := &appsv1.Deployment{}
 		err = r.Get(ctx, types.NamespacedName{Name: "klovercloud-ci-light-house-query", Namespace: config.Namespace}, existingLightHouseQuery)
 		if err != nil && errors.IsNotFound(err) {
 			// Define a new deployment
-			err = descriptor.ApplyLightHouseQuery(r.Client,r.Scheme, config.Namespace, config.Spec.Database, config.Spec.LightHouse.Query, string(config.Spec.Version))
+			err = descriptor.ApplyLightHouseQuery(r.Client, config, r.Scheme, config.Namespace, config.Spec.Database, config.Spec.LightHouse.Query, string(config.Spec.Version))
 			if err != nil {
 				log.Error(err, "Failed to create new Deployment", "Deployment.Namespace", config.Namespace, "Deployment.Name", "klovercloud-ci-light-house-query")
 				return ctrl.Result{}, err
@@ -781,8 +990,8 @@ func (r *KlovercloudCDReconciler) Reconcile(ctx context.Context, req ctrl.Reques
 
 		for i, each := range existingLightHouseQuery.Spec.Template.Spec.Containers {
 			if each.Name == "app" {
-				isRequestedResourcesChanged := each.Resources.Requests.Cpu() != config.Spec.LightHouse.Query.Resources.Requests.Cpu() || each.Resources.Requests.Memory() != config.Spec.LightHouse.Query.Resources.Requests.Memory()
-				isLimitedRequestedChanged := each.Resources.Limits.Cpu() != config.Spec.LightHouse.Query.Resources.Limits.Cpu() || each.Resources.Limits.Memory() != config.Spec.LightHouse.Query.Resources.Limits.Memory()
+				isRequestedResourcesChanged := each.Resources.Requests.Cpu().ToDec().String() != config.Spec.LightHouse.Query.Resources.Requests.Cpu().ToDec().String() || each.Resources.Requests.Memory().ToDec().String() != config.Spec.LightHouse.Query.Resources.Requests.Memory().ToDec().String()
+				isLimitedRequestedChanged := each.Resources.Limits.Cpu().ToDec().String() != config.Spec.LightHouse.Query.Resources.Limits.Cpu().ToDec().String() || each.Resources.Limits.Memory().ToDec().String() != config.Spec.LightHouse.Query.Resources.Limits.Memory().ToDec().String()
 
 				if isRequestedResourcesChanged || isLimitedRequestedChanged {
 					redeploy = true
@@ -798,7 +1007,7 @@ func (r *KlovercloudCDReconciler) Reconcile(ctx context.Context, req ctrl.Reques
 				log.Error(err, "Failed to update Configmap.", "Namespace:", existingLightHouseQuery.Namespace, "Name:", existingLightHouseQuery.Name)
 				return ctrl.Result{}, err
 			}
-			redeploy=true
+			redeploy = true
 		}
 
 		if redeploy {
@@ -828,6 +1037,33 @@ func (r *KlovercloudCDReconciler) Reconcile(ctx context.Context, req ctrl.Reques
 		// Update status.Nodes if needed
 		if !reflect.DeepEqual(podNames, config.Status.LightHouseQueryPods) {
 			config.Status.LightHouseQueryPods = podNames
+			if len(config.Status.EventBankPods) == 0 {
+				config.Status.ApiServicePods = []string{}
+			}
+			if len(config.Status.LightHouseQueryPods) == 0 {
+				config.Status.LightHouseQueryPods = []string{}
+			}
+			if len(config.Status.LightHouseCommandPods) == 0 {
+				config.Status.LightHouseCommandPods = []string{}
+			}
+			if len(config.Status.SecurityPods) == 0 {
+				config.Status.SecurityPods = []string{}
+			}
+			if len(config.Status.ConsolePods) == 0 {
+				config.Status.ConsolePods = []string{}
+			}
+			if len(config.Status.CoreEnginePods) == 0 {
+				config.Status.CoreEnginePods = []string{}
+			}
+			if len(config.Status.AgentPods) == 0 {
+				config.Status.AgentPods = []string{}
+			}
+			if len(config.Status.TerminalPods) == 0 {
+				config.Status.TerminalPods = []string{}
+			}
+			if len(config.Status.EventBankPods) == 0 {
+				config.Status.EventBankPods = []string{}
+			}
 			err := r.Status().Update(ctx, config)
 			if err != nil {
 				log.Error(err, "Failed to update LightHouseQueryPod status")
@@ -839,11 +1075,12 @@ func (r *KlovercloudCDReconciler) Reconcile(ctx context.Context, req ctrl.Reques
 	}
 
 	// ********************************************** All About Agent ***************************************************************
+	log.Info("Applying all agent ...")
 	existingAgent := &appsv1.Deployment{}
 	err = r.Get(ctx, types.NamespacedName{Name: "klovercloud-ci-agent", Namespace: config.Namespace}, existingAgent)
 	if err != nil && errors.IsNotFound(err) {
 		// Define a new deployment
-		err = descriptor.ApplyAgent(r.Client,r.Scheme, r.Config, config.Namespace, config.Spec.Agent, string(config.Spec.Version))
+		err = descriptor.ApplyAgent(r.Client, config, r.Scheme, r.Config, config.Namespace, config.Spec.Agent, string(config.Spec.Version))
 		if err != nil {
 			log.Error(err, "Failed to create new Deployment", "Deployment.Namespace", config.Namespace, "Deployment.Name", "klovercloud-ci-agent")
 			return ctrl.Result{}, err
@@ -892,8 +1129,8 @@ func (r *KlovercloudCDReconciler) Reconcile(ctx context.Context, req ctrl.Reques
 
 	for i, each := range existingAgent.Spec.Template.Spec.Containers {
 		if each.Name == "app" {
-			isRequestedResourcesChanged := each.Resources.Requests.Cpu() != config.Spec.Agent.Resources.Requests.Cpu() || each.Resources.Requests.Memory() != config.Spec.Agent.Resources.Requests.Memory()
-			isLimitedRequestedChanged := each.Resources.Limits.Cpu() != config.Spec.Agent.Resources.Limits.Cpu() || each.Resources.Limits.Memory() != config.Spec.Agent.Resources.Limits.Memory()
+			isRequestedResourcesChanged := each.Resources.Requests.Cpu().ToDec().String() != config.Spec.Agent.Resources.Requests.Cpu().ToDec().String() || each.Resources.Requests.Memory().ToDec().String() != config.Spec.Agent.Resources.Requests.Memory().ToDec().String()
+			isLimitedRequestedChanged := each.Resources.Limits.Cpu().ToDec().String() != config.Spec.Agent.Resources.Limits.Cpu().ToDec().String() || each.Resources.Limits.Memory().ToDec().String() != config.Spec.Agent.Resources.Limits.Memory().ToDec().String()
 
 			if isRequestedResourcesChanged || isLimitedRequestedChanged {
 				redeploy = true
@@ -909,16 +1146,16 @@ func (r *KlovercloudCDReconciler) Reconcile(ctx context.Context, req ctrl.Reques
 			log.Error(err, "Failed to update Configmap.", "Namespace:", existingAgent.Namespace, "Name:", existingAgent.Name)
 			return ctrl.Result{}, err
 		}
-		redeploy=true
+		redeploy = true
 	}
 
 	if deployLightHouse {
-		err = descriptor.ApplyLightHouseCommand(r.Client,r.Scheme, config.Namespace, config.Spec.Database, config.Spec.LightHouse.Command, string(config.Spec.Version))
+		err = descriptor.ApplyLightHouseCommand(r.Client, config, r.Scheme, config.Namespace, config.Spec.Database, config.Spec.LightHouse.Command, string(config.Spec.Version))
 		if err != nil {
 			log.Error(err, "Failed to create new Deployment", "Deployment.Namespace", config.Namespace, "Deployment.Name", "klovercloud-ci-light-house-command")
 			return ctrl.Result{}, err
 		}
-		err = descriptor.ApplyLightHouseQuery(r.Client, r.Scheme,config.Namespace, config.Spec.Database, config.Spec.LightHouse.Query, string(config.Spec.Version))
+		err = descriptor.ApplyLightHouseQuery(r.Client, config, r.Scheme, config.Namespace, config.Spec.Database, config.Spec.LightHouse.Query, string(config.Spec.Version))
 		if err != nil {
 			log.Error(err, "Failed to create new Deployment", "Deployment.Namespace", config.Namespace, "Deployment.Name", "klovercloud-ci-light-house-query")
 			return ctrl.Result{}, err
@@ -962,6 +1199,33 @@ func (r *KlovercloudCDReconciler) Reconcile(ctx context.Context, req ctrl.Reques
 	// Update status.Nodes if needed
 	if !reflect.DeepEqual(podNames, config.Status.AgentPods) {
 		config.Status.AgentPods = podNames
+		if len(config.Status.EventBankPods) == 0 {
+			config.Status.ApiServicePods = []string{}
+		}
+		if len(config.Status.LightHouseQueryPods) == 0 {
+			config.Status.LightHouseQueryPods = []string{}
+		}
+		if len(config.Status.LightHouseCommandPods) == 0 {
+			config.Status.LightHouseCommandPods = []string{}
+		}
+		if len(config.Status.SecurityPods) == 0 {
+			config.Status.SecurityPods = []string{}
+		}
+		if len(config.Status.LightHouseQueryPods) == 0 {
+			config.Status.LightHouseQueryPods = []string{}
+		}
+		if len(config.Status.ConsolePods) == 0 {
+			config.Status.ConsolePods = []string{}
+		}
+		if len(config.Status.CoreEnginePods) == 0 {
+			config.Status.CoreEnginePods = []string{}
+		}
+		if len(config.Status.TerminalPods) == 0 {
+			config.Status.TerminalPods = []string{}
+		}
+		if len(config.Status.EventBankPods) == 0 {
+			config.Status.EventBankPods = []string{}
+		}
 		err := r.Status().Update(ctx, config)
 		if err != nil {
 			log.Error(err, "Failed to update AgentPods status")

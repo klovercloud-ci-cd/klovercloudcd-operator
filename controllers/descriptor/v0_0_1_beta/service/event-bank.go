@@ -9,7 +9,7 @@ type EventBank interface {
 	ModifyConfigmap(namespace string, db v1alpha1.DB) EventBank
 	ModifyDeployment(namespace string, eventBank v1alpha1.EventBank) EventBank
 	ModifyService(namespace string) EventBank
-	Apply(scheme *runtime.Scheme,wait bool) error
+	Apply(config *v1alpha1.KlovercloudCD, scheme *runtime.Scheme, wait bool) error
 	ApplyConfigMap() error
 	ApplyDeployment() error
 	ApplyService() error

@@ -16,8 +16,6 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"strings"
-
-	basev1alpha1 "github.com/klovercloud-ci-cd/klovercloudcd-operator/api/v1alpha1"
 )
 
 type eventBank struct {
@@ -70,12 +68,10 @@ func (e eventBank) ModifyService(namespace string) service.EventBank {
 	return e
 }
 
-func (e eventBank) Apply(scheme *runtime.Scheme,wait bool) error {
+func (e eventBank) Apply(config *v1alpha1.KlovercloudCD, scheme *runtime.Scheme, wait bool) error {
 	if e.Error != nil {
 		return e.Error
 	}
-
-	config := &basev1alpha1.KlovercloudCD{}
 
 	ctrl.SetControllerReference(config, &e.Configmap, scheme)
 	err := e.ApplyConfigMap()
@@ -135,7 +131,7 @@ func (e eventBank) ApplyService() error {
 }
 
 func getConfigMapFromFile() corev1.ConfigMap {
-	data, err := ioutil.ReadFile("event-bank-configmap.yaml")
+	data, err := ioutil.ReadFile("descriptor/v0_0_1_beta/event-bank/event-bank-configmap.yaml")
 	if err != nil {
 		panic(err.Error())
 	}
@@ -149,7 +145,7 @@ func getConfigMapFromFile() corev1.ConfigMap {
 }
 
 func getServiceFromFile() corev1.Service {
-	data, err := ioutil.ReadFile("event-bank-service.yaml")
+	data, err := ioutil.ReadFile("descriptor/v0_0_1_beta/event-bank/event-bank-service.yaml")
 	if err != nil {
 		panic(err.Error())
 	}
@@ -163,7 +159,7 @@ func getServiceFromFile() corev1.Service {
 }
 
 func getDeploymentFromFile() appv1.Deployment {
-	data, err := ioutil.ReadFile("event-bank-deployment.yaml")
+	data, err := ioutil.ReadFile("descriptor/v0_0_1_beta/event-bank/event-bank-deployment.yaml")
 	if err != nil {
 		panic(err.Error())
 	}

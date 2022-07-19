@@ -62,7 +62,6 @@ type KlovercloudCDSpec struct {
 
 	// Terminal config of Terminal server
 	Terminal Terminal `json:"terminal"`
-
 }
 
 // KlovercloudCDStatus defines the observed state of KlovercloudCD
@@ -99,14 +98,12 @@ type KlovercloudCDStatus struct {
 
 	// TerminalPods are the names of the Terminal pods
 	TerminalPods []string `json:"terminal_pods"`
-
 }
-
 
 // Terminal defines the config of Terminal service
 type Terminal struct {
 	// Enabled can be true or false.
-	Enabled string  `json:"enabled"`
+	Enabled string `json:"enabled"`
 
 	// Size is the number of instance
 	Size int32 `json:"size"`
@@ -118,7 +115,7 @@ type Terminal struct {
 // Console defines the config of Console service
 type Console struct {
 	// Enabled can be true or false.
-	Enabled string  `json:"enabled"`
+	Enabled string `json:"enabled"`
 
 	// Size is the number of instance
 	Size int32 `json:"size"`
@@ -126,7 +123,6 @@ type Console struct {
 	// Resources defines cpu, memory requests and limits
 	Resources corev1.ResourceRequirements `json:"resources,omitempty" protobuf:"bytes,8,opt,name=resources"`
 }
-
 
 // CoreEngine defines the config of CoreEngine service
 type CoreEngine struct {
@@ -134,14 +130,12 @@ type CoreEngine struct {
 	// Size is the number of instance
 	Size int32 `json:"size"`
 
-
-	// NumberOfConCurrentProcess is the number of concurrent jobs for (build,jenkins,intermediary)
-	NumberOfConCurrentProcess int `json:"number_of_con_current_process"`
+	// NumberOfConcurrentProcess is the number of concurrent jobs for (build,jenkins,intermediary)
+	NumberOfConcurrentProcess int `json:"number_of_concurrent_process"`
 
 	// Resources defines cpu, memory requests and limits
 	Resources corev1.ResourceRequirements `json:"resources,omitempty" protobuf:"bytes,8,opt,name=resources"`
 }
-
 
 // EventBank defines the config of EventBank service
 type EventBank struct {
@@ -151,7 +145,6 @@ type EventBank struct {
 	// Resources defines cpu, memory requests and limits
 	Resources corev1.ResourceRequirements `json:"resources,omitempty" protobuf:"bytes,8,opt,name=resources"`
 }
-
 
 // IntegrationManager defines the config of IntegrationManager service
 type IntegrationManager struct {
@@ -178,7 +171,6 @@ type IntegrationManager struct {
 	Resources corev1.ResourceRequirements `json:"resources,omitempty" protobuf:"bytes,8,opt,name=resources"`
 }
 
-
 // Agent defines the config of Agent service
 type Agent struct {
 
@@ -186,7 +178,7 @@ type Agent struct {
 	Size int32 `json:"size"`
 
 	// PullSize defines how many jobs it will pull every period. It should depend on consumed resources
-    PullSize string `json:"pull_size,omitempty"`
+	PullSize string `json:"pull_size,omitempty"`
 
 	// Token defines token to communicate with api service. Generate this by doing exec inside api service, then run kcpctl generate-jwt client={your agent name}
 	Token string `json:"token,omitempty"`
@@ -207,7 +199,6 @@ type Agent struct {
 	Resources corev1.ResourceRequirements `json:"resources,omitempty" protobuf:"bytes,8,opt,name=resources"`
 }
 
-
 // ApiService defines the config of api service
 type ApiService struct {
 
@@ -221,7 +212,7 @@ type ApiService struct {
 // LightHouse defines the config of lighthouse service
 type LightHouse struct {
 	// Enabled can be true or false.
-	Enabled string  `json:"enabled"`
+	Enabled string `json:"enabled,omitempty"`
 
 	// LightHouseCommand config of LightHouseCommand server
 	Command LightHouseCommand `json:"command"`
@@ -256,16 +247,16 @@ type Security struct {
 	User User `json:"user"`
 
 	// MailServerHostEmail mail servers host email
-	MailServerHostEmail string `json:"mail_server_host_email"`
+	MailServerHostEmail string `json:"mail_server_host_email,omitempty"`
 
 	// MailServerHostEmailSecret mail servers host emails secret
-	MailServerHostEmailSecret string `json:"mail_server_host_email_secret"`
+	MailServerHostEmailSecret string `json:"mail_server_host_email_secret,omitempty"`
 
 	// SMTPHost mail server smtp host
-	SMTPHost string `json:"smtp_host"`
+	SMTPHost string `json:"smtp_host,omitempty"`
 
 	// SMTPPort mail server smtp port
-	SMTPPort string `json:"smtp_port"`
+	SMTPPort string `json:"smtp_port,omitempty"`
 
 	// Size is the number of instance
 	Size int32 `json:"size"`
@@ -311,9 +302,7 @@ type DB struct {
 
 	// ServerPort represents database server port
 	ServerPort string `json:"server_port,omitempty"`
-
 }
-
 
 //+kubebuilder:object:root=true
 //+kubebuilder:subresource:status

@@ -1,4 +1,4 @@
-package lighthouse_command
+package light_house_command
 
 import (
 	"context"
@@ -15,8 +15,6 @@ import (
 	"log"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-
-	basev1alpha1 "github.com/klovercloud-ci-cd/klovercloudcd-operator/api/v1alpha1"
 )
 
 type lighthouseCommand struct {
@@ -72,13 +70,10 @@ func (l lighthouseCommand) ModifyService(namespace string) service.LightHouseCom
 	return l
 }
 
-func (l lighthouseCommand) Apply(scheme *runtime.Scheme,wait bool) error {
+func (l lighthouseCommand) Apply(config *v1alpha1.KlovercloudCD, scheme *runtime.Scheme, wait bool) error {
 	if l.Error != nil {
 		return l.Error
 	}
-
-	config := &basev1alpha1.KlovercloudCD{}
-
 	ctrl.SetControllerReference(config, &l.Configmap, scheme)
 	err := l.ApplyConfigMap()
 	if err != nil {
@@ -137,7 +132,7 @@ func (l lighthouseCommand) ApplyService() error {
 }
 
 func getConfigMapFromFile() corev1.ConfigMap {
-	data, err := ioutil.ReadFile("light-house-command-configmap.yml")
+	data, err := ioutil.ReadFile("descriptor/v0_0_1_beta/light-house-command/light-house-command-configmap.yml")
 	if err != nil {
 		panic(err.Error())
 	}
@@ -151,7 +146,7 @@ func getConfigMapFromFile() corev1.ConfigMap {
 }
 
 func getServiceFromFile() corev1.Service {
-	data, err := ioutil.ReadFile("light-house-command-service.yml")
+	data, err := ioutil.ReadFile("descriptor/v0_0_1_beta/light-house-command/light-house-command-service.yml")
 	if err != nil {
 		panic(err.Error())
 	}
@@ -165,7 +160,7 @@ func getServiceFromFile() corev1.Service {
 }
 
 func getDeploymentFromFile() appv1.Deployment {
-	data, err := ioutil.ReadFile("light-house-command-deployment.yml")
+	data, err := ioutil.ReadFile("descriptor/v0_0_1_beta/light-house-command/light-house-command-deployment.yml")
 	if err != nil {
 		panic(err.Error())
 	}

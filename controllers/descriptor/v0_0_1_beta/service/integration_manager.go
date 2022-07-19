@@ -6,10 +6,10 @@ import (
 )
 
 type IntegrationManager interface {
-	ModifyConfigmap(namespace string,db v1alpha1.DB,integrationManager v1alpha1.IntegrationManager) IntegrationManager
-	ModifyDeployment(namespace string,integrationManager v1alpha1.IntegrationManager) IntegrationManager
+	ModifyConfigmap(namespace string, db v1alpha1.DB, integrationManager v1alpha1.IntegrationManager) IntegrationManager
+	ModifyDeployment(namespace string, integrationManager v1alpha1.IntegrationManager) IntegrationManager
 	ModifyService(namespace string) IntegrationManager
-	Apply(scheme *runtime.Scheme, wait bool) error
+	Apply(config *v1alpha1.KlovercloudCD, scheme *runtime.Scheme, wait bool) error
 	ApplyConfigMap() error
 	ApplyDeployment() error
 	ApplyService() error

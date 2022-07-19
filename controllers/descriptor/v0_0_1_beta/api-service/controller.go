@@ -16,8 +16,6 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"strings"
-
-	basev1alpha1 "github.com/klovercloud-ci-cd/klovercloudcd-operator/api/v1alpha1"
 )
 
 type apiService struct {
@@ -50,7 +48,7 @@ func (a apiService) ModifyConfigmap(namespace string) service.ApiService {
 	a.Configmap.ObjectMeta.Namespace = namespace
 	found = &corev1.ConfigMap{}
 	_ = a.Client.Get(context.Background(), types.NamespacedName{Name: "klovercloud-security-envar-config", Namespace: namespace}, found)
-	a.Configmap.Data["PUBLIC_KEY"] = found.Data["PRIVATE_KEY"]
+	a.Configmap.Data["PUBLIC_KEY"] = found.Data["PUBLIC_KEY"]
 
 	integrationManagerUrl := a.Configmap.Data["KLOVERCLOUD_CI_INTEGRATION_MANAGER_URL"]
 	replacedUrl := strings.ReplaceAll(integrationManagerUrl, ".klovercloud.", "."+namespace+".")
@@ -98,13 +96,10 @@ func (a apiService) ModifyService(namespace string) service.ApiService {
 	return a
 }
 
-func (a apiService) Apply(scheme *runtime.Scheme,wait bool) error {
+func (a apiService) Apply(config *v1alpha1.KlovercloudCD, scheme *runtime.Scheme, wait bool) error {
 	if a.Error != nil {
 		return a.Error
 	}
-
-	config := &basev1alpha1.KlovercloudCD{}
-
 	ctrl.SetControllerReference(config, &a.Configmap, scheme)
 
 	err := a.ApplyConfigMap()
@@ -165,7 +160,7 @@ func (a apiService) ApplyService() error {
 }
 
 func getConfigMapFromFile() corev1.ConfigMap {
-	data, err := ioutil.ReadFile("api-service-configmap.yaml")
+	data, err := ioutil.ReadFile("descriptor/v0_0_1_beta/api-service/api-service-configmap.yaml")
 	if err != nil {
 		panic(err.Error())
 	}
@@ -179,7 +174,7 @@ func getConfigMapFromFile() corev1.ConfigMap {
 }
 
 func getServiceFromFile() corev1.Service {
-	data, err := ioutil.ReadFile("api-service-service.yaml")
+	data, err := ioutil.ReadFile("descriptor/v0_0_1_beta/api-service/api-service-service.yaml")
 	if err != nil {
 		panic(err.Error())
 	}
@@ -193,7 +188,7 @@ func getServiceFromFile() corev1.Service {
 }
 
 func getDeploymentFromFile() appv1.Deployment {
-	data, err := ioutil.ReadFile("api-service-deployment.yaml")
+	data, err := ioutil.ReadFile("descriptor/v0_0_1_beta/api-service/api-service-deployment.yaml")
 	if err != nil {
 		panic(err.Error())
 	}

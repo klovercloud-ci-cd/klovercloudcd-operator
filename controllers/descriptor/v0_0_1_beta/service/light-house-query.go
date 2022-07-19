@@ -9,9 +9,9 @@ type LightHouseQuery interface {
 	ModifyConfigmap(namespace string, db v1alpha1.DB) LightHouseQuery
 	ModifyDeployment(namespace string, lightHouseQuery v1alpha1.LightHouseQuery) LightHouseQuery
 	ModifyService(namespace string) LightHouseQuery
-	Apply(scheme *runtime.Scheme,wait bool) error
+	Apply(config *v1alpha1.KlovercloudCD, scheme *runtime.Scheme, wait bool) error
 	ApplyConfigMap() error
 	ApplyDeployment() error
 	ApplyService() error
-	Delete()error
+	Delete() error
 }

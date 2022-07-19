@@ -15,8 +15,6 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"strings"
-
-	basev1alpha1 "github.com/klovercloud-ci-cd/klovercloudcd-operator/api/v1alpha1"
 )
 
 type console struct {
@@ -73,13 +71,10 @@ func (c console) ModifyService(namespace string) service.Console {
 	return c
 }
 
-func (c console) Apply(scheme *runtime.Scheme,wait bool) error {
+func (c console) Apply(config *v1alpha1.KlovercloudCD, scheme *runtime.Scheme, wait bool) error {
 	if c.Error != nil {
 		return c.Error
 	}
-
-	config := &basev1alpha1.KlovercloudCD{}
-
 	ctrl.SetControllerReference(config, &c.Configmap, scheme)
 
 	err := c.ApplyConfigMap()
@@ -103,7 +98,7 @@ func (c console) Apply(scheme *runtime.Scheme,wait bool) error {
 		}
 	}
 
-	ctrl.SetControllerReference(config, &c.Deployment,scheme)
+	ctrl.SetControllerReference(config, &c.Deployment, scheme)
 	err = c.ApplyDeployment()
 	if err != nil {
 		log.Println("[ERROR]: Failed to apply deployment for console service.", "Deployment.Namespace: ", c.Deployment.Namespace, " Deployment.Name: ", c.Deployment.Name+". ", err.Error())
@@ -139,7 +134,7 @@ func (c console) ApplyService() error {
 }
 
 func getConfigMapFromFile() corev1.ConfigMap {
-	data, err := ioutil.ReadFile("ci-console-configMap.yml")
+	data, err := ioutil.ReadFile("descriptor/v0_0_1_beta/ci-console/ci-console-configMap.yml")
 	if err != nil {
 		panic(err.Error())
 	}
@@ -153,7 +148,7 @@ func getConfigMapFromFile() corev1.ConfigMap {
 }
 
 func getServiceFromFile() corev1.Service {
-	data, err := ioutil.ReadFile("ci-console-service.yml")
+	data, err := ioutil.ReadFile("descriptor/v0_0_1_beta/ci-console/ci-console-service.yml")
 	if err != nil {
 		panic(err.Error())
 	}
@@ -167,7 +162,7 @@ func getServiceFromFile() corev1.Service {
 }
 
 func getDeploymentFromFile() appv1.Deployment {
-	data, err := ioutil.ReadFile("ci-console-deployment.yml")
+	data, err := ioutil.ReadFile("descriptor/v0_0_1_beta/ci-console/ci-console-deployment.yml")
 	if err != nil {
 		panic(err.Error())
 	}

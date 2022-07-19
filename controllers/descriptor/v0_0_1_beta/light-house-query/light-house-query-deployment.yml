@@ -17,7 +17,7 @@ spec:
       containers:
         - name: app
           imagePullPolicy: Always
-          image: quay.io/klovercloud/ci-light-house-query:${version}
+          image: quay.io/klovercloud/ci-light-house-query:v0.0.1-beta
           resources:
             limits:
               cpu: 100m

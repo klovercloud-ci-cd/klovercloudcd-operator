@@ -175,8 +175,8 @@ spec:
               core_engine:
                 description: CoreEngine config of CoreEngine server
                 properties:
-                  number_of_con_current_process:
-                    description: NumberOfConCurrentProcess is the number of concurrent
+                  number_of_concurrent_process:
+                    description: NumberOfConcurrentProcess is the number of concurrent
                       jobs for (build,jenkins,intermediary)
                     type: integer
                   resources:
@@ -210,7 +210,7 @@ spec:
                     format: int32
                     type: integer
                 required:
-                - number_of_con_current_process
+                - number_of_concurrent_process
                 - size
                 type: object
               db:
@@ -411,7 +411,6 @@ spec:
                     type: object
                 required:
                 - command
-                - enabled
                 - query
                 type: object
               security:
@@ -490,11 +489,7 @@ spec:
                     - phone
                     type: object
                 required:
-                - mail_server_host_email
-                - mail_server_host_email_secret
                 - size
-                - smtp_host
-                - smtp_port
                 - user
                 type: object
               terminal:

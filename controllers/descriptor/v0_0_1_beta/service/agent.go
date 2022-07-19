@@ -7,12 +7,12 @@ import (
 
 type Agent interface {
 	ModifyClusterRole() Agent
-	ModifyClusterRoleBinding(namespace string,agent v1alpha1.Agent) Agent
-	ModifyServiceAccount(namespace string,agent v1alpha1.Agent) Agent
-	ModifyConfigmap(namespace string,agent v1alpha1.Agent) Agent
+	ModifyClusterRoleBinding(namespace string, agent v1alpha1.Agent) Agent
+	ModifyServiceAccount(namespace string, agent v1alpha1.Agent) Agent
+	ModifyConfigmap(namespace string, agent v1alpha1.Agent) Agent
 	ModifyDeployment(namespace string, agent v1alpha1.Agent) Agent
 	ModifyService(namespace string) Agent
-	Apply(scheme *runtime.Scheme,wait bool) error
+	Apply(config *v1alpha1.KlovercloudCD, scheme *runtime.Scheme, wait bool) error
 	ApplyClusterRole() error
 	ApplyClusterRoleBinding() error
 	ApplyServiceAccount() error

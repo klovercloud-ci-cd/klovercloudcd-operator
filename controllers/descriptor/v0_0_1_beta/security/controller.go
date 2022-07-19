@@ -17,8 +17,6 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"time"
-
-	basev1alpha1 "github.com/klovercloud-ci-cd/klovercloudcd-operator/api/v1alpha1"
 )
 
 type security struct {
@@ -53,7 +51,7 @@ func (s security) ModifyDeployment(namespace string, security v1alpha1.Security)
 }
 
 func getServiceFromFile() corev1.Service {
-	data, err := ioutil.ReadFile("security-server-service.yaml")
+	data, err := ioutil.ReadFile("descriptor/v0_0_1_beta/security/security-server-service.yaml")
 	if err != nil {
 		panic(err.Error())
 	}
@@ -67,7 +65,7 @@ func getServiceFromFile() corev1.Service {
 }
 
 func getDeploymentFromFile() appv1.Deployment {
-	data, err := ioutil.ReadFile("security-server-deployment.yaml")
+	data, err := ioutil.ReadFile("descriptor/v0_0_1_beta/security/security-server-deployment.yaml")
 	if err != nil {
 		panic(err.Error())
 	}
@@ -80,7 +78,7 @@ func getDeploymentFromFile() appv1.Deployment {
 	return *obj.(*appv1.Deployment)
 }
 
-func (s security) Apply(scheme *runtime.Scheme,wait bool) error {
+func (s security) Apply(config *v1alpha1.KlovercloudCD, scheme *runtime.Scheme, wait bool) error {
 	if s.Error != nil {
 		return s.Error
 	}
@@ -102,9 +100,6 @@ func (s security) Apply(scheme *runtime.Scheme,wait bool) error {
 			existingPodMap[each.Name] = true
 		}
 	}
-
-	config := &basev1alpha1.KlovercloudCD{}
-
 	ctrl.SetControllerReference(config, &s.Deployment, scheme)
 	err := s.ApplyDeployment()
 	if err != nil {

@@ -8,7 +8,7 @@ import (
 type Security interface {
 	ModifyDeployment(namespace string, security v1alpha1.Security) Security
 	ModifyService(namespace string) Security
-	Apply(scheme *runtime.Scheme,wait bool) error
+	Apply(config *v1alpha1.KlovercloudCD, scheme *runtime.Scheme, wait bool) error
 	ApplyDeployment() error
 	ApplyService() error
 }

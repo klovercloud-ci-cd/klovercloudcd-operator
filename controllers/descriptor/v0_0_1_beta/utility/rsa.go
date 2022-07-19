@@ -9,8 +9,8 @@ import (
 )
 
 type Generator interface {
-	Generate() (private []byte, public []byte,  error error)
-	generatePrivateKey()  (*rsa.PrivateKey, error)
+	Generate() (private []byte, public []byte, error error)
+	generatePrivateKey() (*rsa.PrivateKey, error)
 	encodePrivateKeyToPEM(privateKey *rsa.PrivateKey) []byte
 	encodePublicKeyToPEM(publickey *rsa.PublicKey) []byte
 }
@@ -23,19 +23,18 @@ func New() Generator {
 	return Key{4096}
 }
 
-
-func(key Key) Generate() (private []byte, public []byte,  error error){
+func (key Key) Generate() (private []byte, public []byte, error error) {
 	privateKey, err := key.generatePrivateKey()
 	if err != nil {
-		log.Println("Failed to generate private key: [ERROR]: "+err.Error())
-		return nil,nil,err
+		log.Println("Failed to generate private key: [ERROR]: " + err.Error())
+		return nil, nil, err
 	}
 	privateKeyBytes := key.encodePrivateKeyToPEM(privateKey)
-	publicKey:=key.encodePublicKeyToPEM(&privateKey.PublicKey)
-	return privateKeyBytes,publicKey,nil
+	publicKey := key.encodePublicKeyToPEM(&privateKey.PublicKey)
+	return privateKeyBytes, publicKey, nil
 
 }
-func(k Key)  generatePrivateKey()(*rsa.PrivateKey, error) {
+func (k Key) generatePrivateKey() (*rsa.PrivateKey, error) {
 	privateKey, err := rsa.GenerateKey(rand.Reader, k.Bit_size)
 	if err != nil {
 		return nil, err
@@ -47,7 +46,6 @@ func(k Key)  generatePrivateKey()(*rsa.PrivateKey, error) {
 	log.Println("Private Key generated")
 	return privateKey, nil
 }
-
 
 func (k Key) encodePrivateKeyToPEM(privateKey *rsa.PrivateKey) []byte {
 	// Get ASN.1 DER format
@@ -66,7 +64,8 @@ func (k Key) encodePrivateKeyToPEM(privateKey *rsa.PrivateKey) []byte {
 	return privatePEM
 }
 
-func(k Key) encodePublicKeyToPEM(publickey *rsa.PublicKey) []byte {
+func (k Key) encodePublicKeyToPEM(publickey *rsa.PublicKey) []byte {
+
 	// Get ASN.1 DER format
 	privDER := x509.MarshalPKCS1PublicKey(publickey)
 

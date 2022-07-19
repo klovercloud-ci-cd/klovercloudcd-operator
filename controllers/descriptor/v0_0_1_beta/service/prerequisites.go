@@ -10,7 +10,7 @@ type Prerequisites interface {
 	ModifyTektonDescriptor(namespace string) Prerequisites
 	ModifySecurityConfigMap(namespace string, db v1alpha1.DB, security v1alpha1.Security) Prerequisites
 	ApplySecret() error
-	ApplyTektonDescriptor() error
+	ApplyTektonDescriptor(config *v1alpha1.KlovercloudCD, scheme *runtime.Scheme) error
 	ApplySecurityConfigMap() error
-	Apply(scheme *runtime.Scheme) error
+	Apply(config *v1alpha1.KlovercloudCD, scheme *runtime.Scheme) error
 }

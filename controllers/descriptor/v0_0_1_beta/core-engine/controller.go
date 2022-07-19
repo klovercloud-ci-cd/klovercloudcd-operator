@@ -19,8 +19,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"strconv"
 	"strings"
-
-	basev1alpha1 "github.com/klovercloud-ci-cd/klovercloudcd-operator/api/v1alpha1"
 )
 
 type coreEngine struct {
@@ -46,10 +44,10 @@ func (c coreEngine) ModifyConfigmap(namespace string, coreEngine v1alpha1.CoreEn
 		c.ConfigMap.Data["MONGO_PORT"] = db.ServerPort
 	}
 
-	if coreEngine.NumberOfConCurrentProcess == 0 {
-		coreEngine.NumberOfConCurrentProcess = 5
+	if coreEngine.NumberOfConcurrentProcess == 0 {
+		coreEngine.NumberOfConcurrentProcess = 5
 	}
-	c.ConfigMap.Data["ALLOWED_CONCURRENT_BUILD"] = strconv.Itoa(coreEngine.NumberOfConCurrentProcess)
+	c.ConfigMap.Data["ALLOWED_CONCURRENT_BUILD"] = strconv.Itoa(coreEngine.NumberOfConcurrentProcess)
 	EVENT_STORE_URL := c.ConfigMap.Data["EVENT_STORE_URL"]
 	replacedUrl := strings.ReplaceAll(EVENT_STORE_URL, ".klovercloud.", "."+namespace+".")
 	c.ConfigMap.Data["EVENT_STORE_URL"] = replacedUrl
@@ -111,37 +109,34 @@ func (c coreEngine) ModifyServiceAccount(namespace string) service.CoreEngine {
 	return c
 }
 
-func (c coreEngine) Apply(scheme *runtime.Scheme,wait bool) error {
+func (c coreEngine) Apply(config *v1alpha1.KlovercloudCD, scheme *runtime.Scheme, wait bool) error {
 	if c.Error != nil {
 		return c.Error
 	}
-
-	config := &basev1alpha1.KlovercloudCD{}
-
 	ctrl.SetControllerReference(config, &c.ClusterRole, scheme)
 	err := c.ApplyClusterRole()
-	if err != nil {
+	if err != nil && !strings.Contains(err.Error(), "already exists") {
 		log.Println("[ERROR]: Failed to create cluster role for core engine service.", "Deployment.Namespace", c.Deployment.Namespace, "Deployment.Name", c.Deployment.Name, err.Error())
 		return err
 	}
 
 	ctrl.SetControllerReference(config, &c.ClusterRoleBinding, scheme)
 	err = c.ApplyClusterRoleBinding()
-	if err != nil {
+	if err != nil && !strings.Contains(err.Error(), "already exists") {
 		log.Println("[ERROR]: Failed to create cluster role binding for core engine service.", "Deployment.Namespace", c.Deployment.Namespace, "Deployment.Name", c.Deployment.Name, err.Error())
 		return err
 	}
 
 	ctrl.SetControllerReference(config, &c.ServiceAccount, scheme)
 	err = c.ApplyServiceAccount()
-	if err != nil {
+	if err != nil && !strings.Contains(err.Error(), "already exists") {
 		log.Println("[ERROR]: Failed to create service account for core engine service.", "Deployment.Namespace", c.Deployment.Namespace, "Deployment.Name", c.Deployment.Name, err.Error())
 		return err
 	}
 
 	ctrl.SetControllerReference(config, &c.ConfigMap, scheme)
 	err = c.ApplyConfigMap()
-	if err != nil {
+	if err != nil && !strings.Contains(err.Error(), "already exists") {
 		log.Println("[ERROR]: Failed to create configmap for event bank service.", "Deployment.Namespace", c.Deployment.Namespace, "Deployment.Name", c.Deployment.Name, err.Error())
 		return err
 	}
@@ -163,7 +158,7 @@ func (c coreEngine) Apply(scheme *runtime.Scheme,wait bool) error {
 
 	ctrl.SetControllerReference(config, &c.Deployment, scheme)
 	err = c.ApplyDeployment()
-	if err != nil {
+	if err != nil && !strings.Contains(err.Error(), "already exists") {
 		log.Println("[ERROR]: Failed to apply deployment for event bank service.", "Deployment.Namespace: ", c.Deployment.Namespace, " Deployment.Name: ", c.Deployment.Name+". ", err.Error())
 		return err
 	}
@@ -209,7 +204,7 @@ func (c coreEngine) ApplyServiceAccount() error {
 }
 
 func getDeploymentFromFile() appv1.Deployment {
-	data, err := ioutil.ReadFile("security-server-deployment.yaml")
+	data, err := ioutil.ReadFile("descriptor/v0_0_1_beta/core-engine/core-engine-deployment.yaml")
 	if err != nil {
 		panic(err.Error())
 	}
@@ -222,7 +217,7 @@ func getDeploymentFromFile() appv1.Deployment {
 	return *obj.(*appv1.Deployment)
 }
 func getConfigMapFromFile() corev1.ConfigMap {
-	data, err := ioutil.ReadFile("security-server-deployment.yaml")
+	data, err := ioutil.ReadFile("descriptor/v0_0_1_beta/core-engine/core-engine-configmap.yaml")
 	if err != nil {
 		panic(err.Error())
 	}
@@ -235,7 +230,7 @@ func getConfigMapFromFile() corev1.ConfigMap {
 	return *obj.(*corev1.ConfigMap)
 }
 func getServiceFromFile() corev1.Service {
-	data, err := ioutil.ReadFile("security-server-deployment.yaml")
+	data, err := ioutil.ReadFile("descriptor/v0_0_1_beta/core-engine/core-engine-service.yaml")
 	if err != nil {
 		panic(err.Error())
 	}
@@ -248,7 +243,7 @@ func getServiceFromFile() corev1.Service {
 	return *obj.(*corev1.Service)
 }
 func getClusterRoleFromFile() rbacv1.ClusterRole {
-	data, err := ioutil.ReadFile("security-server-deployment.yaml")
+	data, err := ioutil.ReadFile("descriptor/v0_0_1_beta/core-engine/core-engine-cluster-role.yaml")
 	if err != nil {
 		panic(err.Error())
 	}
@@ -261,7 +256,7 @@ func getClusterRoleFromFile() rbacv1.ClusterRole {
 	return *obj.(*rbacv1.ClusterRole)
 }
 func getClusterRoleBindingFromFile() rbacv1.ClusterRoleBinding {
-	data, err := ioutil.ReadFile("security-server-deployment.yaml")
+	data, err := ioutil.ReadFile("descriptor/v0_0_1_beta/core-engine/core-engine-cluster-rolebinding.yaml")
 	if err != nil {
 		panic(err.Error())
 	}
@@ -274,7 +269,7 @@ func getClusterRoleBindingFromFile() rbacv1.ClusterRoleBinding {
 	return *obj.(*rbacv1.ClusterRoleBinding)
 }
 func getServiceAccountFromFile() corev1.ServiceAccount {
-	data, err := ioutil.ReadFile("security-server-deployment.yaml")
+	data, err := ioutil.ReadFile("descriptor/v0_0_1_beta/core-engine/core-engine-service-account.yaml")
 	if err != nil {
 		panic(err.Error())
 	}

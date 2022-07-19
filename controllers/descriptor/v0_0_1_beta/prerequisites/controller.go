@@ -18,11 +18,10 @@ import (
 	"k8s.io/apimachinery/pkg/util/yaml"
 	"k8s.io/client-go/kubernetes/scheme"
 	"log"
+	"path/filepath"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"strings"
-
-	basev1alpha1 "github.com/klovercloud-ci-cd/klovercloudcd-operator/api/v1alpha1"
 )
 
 type prerequisites struct {
@@ -105,49 +104,59 @@ func (p prerequisites) ApplySecret() error {
 	return p.Client.Create(context.Background(), &p.Secret)
 }
 
-func (p prerequisites) ApplyTektonDescriptor() error {
+func (p prerequisites) ApplyTektonDescriptor(config *v1alpha1.KlovercloudCD, scheme *runtime.Scheme) error {
 	existingTektonController := &appsv1.Deployment{}
 	err := p.Client.Get(context.Background(), types.NamespacedName{Name: "tekton-pipelines-controller", Namespace: p.Secret.Namespace}, existingTektonController)
 	if err != nil && errors.IsNotFound(err) {
 		for _, each := range p.TektonDescriptor {
-			return p.Client.Create(context.Background(), &each)
+			if each.GetKind() == "Namespace" || each.GetKind() == "Namespaces" {
+				each.SetName(p.Secret.Namespace)
+				ctrl.SetControllerReference(config, &each, scheme)
+				p.Client.Update(context.Background(), &each)
+				continue
+			}
+			each.SetNamespace(p.Secret.Namespace)
+			ctrl.SetControllerReference(config, &each, scheme)
+			err := p.Client.Create(context.Background(), &each)
+			if err != nil {
+				log.Println("[WARINING:]: While applying tekton descriptors.", err.Error())
+			}
 		}
 	}
 	return nil
 }
 
-func (p prerequisites) Apply(scheme *runtime.Scheme) error {
+func (p prerequisites) Apply(config *v1alpha1.KlovercloudCD, scheme *runtime.Scheme) error {
 	if p.Error != nil {
 		return p.Error
 	}
 
-	config := &basev1alpha1.KlovercloudCD{}
-
-	ctrl.SetControllerReference(config, &p.Configmap, scheme)
-	err := p.ApplyTektonDescriptor()
+	err := p.ApplyTektonDescriptor(config, scheme)
 	if err != nil {
 		log.Println("[ERROR]: Failed to create tekton", err.Error())
 		return err
 	}
 
-	ctrl.SetControllerReference(config, &p.Configmap, scheme)
+	ctrl.SetControllerReference(config, &p.Secret, scheme)
 	err = p.ApplySecret()
 	if err != nil {
-		log.Println("[ERROR]: Failed to create secret ", "Secret.Namespace", p.Secret.Namespace, "Deployment.Name", p.Secret.Name, err.Error())
+		log.Println("[ERROR]: Failed to create secret ", "Secret.Namespace", p.Secret.Namespace, "Secret.Name", p.Secret.Name, err.Error())
 		return err
 	}
 
 	ctrl.SetControllerReference(config, &p.Configmap, scheme)
 	err = p.ApplySecurityConfigMap()
 	if err != nil {
-		log.Println("[ERROR]: Failed to create security service configMap ", "Secret.Namespace", p.Secret.Namespace, "Deployment.Name", p.Secret.Name, err.Error())
+		log.Println("[ERROR]: Failed to create security service configMap ", "Secret.Namespace", p.Secret.Namespace, "Secret.Name", p.Secret.Name, err.Error())
 		return err
 	}
 	return nil
 }
 
 func getSecretFromFile() coreV1.Secret {
-	data, err := ioutil.ReadFile("mongo-secret.yaml")
+	absPath, _ := filepath.Abs("descriptor/v0_0_1_beta/prerequisites/mongo-secret.yaml")
+	data, err := ioutil.ReadFile(absPath)
+	//log.Println("reading from " + absPath)
 	if err != nil {
 		panic(err.Error())
 	}
@@ -162,7 +171,7 @@ func getSecretFromFile() coreV1.Secret {
 
 func getTektonDescriptorFromFile() []unstructured.Unstructured {
 	var files []unstructured.Unstructured
-	data, _ := ioutil.ReadFile("tekton-release.yaml")
+	data, _ := ioutil.ReadFile("descriptor/v0_0_1_beta/prerequisites/tekton-release.yaml")
 	fileAsString := string(data)[:]
 	sepFiles := strings.Split(fileAsString, "---")
 	for _, each := range sepFiles {
@@ -170,9 +179,7 @@ func getTektonDescriptorFromFile() []unstructured.Unstructured {
 			Object: map[string]interface{}{},
 		}
 		if err := yaml.Unmarshal([]byte(each), &obj.Object); err != nil {
-			log.Println(err.Error())
 			if err := json.Unmarshal([]byte(each), &obj.Object); err != nil {
-				log.Println(err.Error())
 			}
 		}
 		files = append(files, *obj)
@@ -181,7 +188,7 @@ func getTektonDescriptorFromFile() []unstructured.Unstructured {
 }
 
 func getConfigMapFromFile() coreV1.ConfigMap {
-	data, err := ioutil.ReadFile("security-server-configmap.yaml")
+	data, err := ioutil.ReadFile("descriptor/v0_0_1_beta/prerequisites/security-server-configmap.yaml")
 	if err != nil {
 		panic(err.Error())
 	}

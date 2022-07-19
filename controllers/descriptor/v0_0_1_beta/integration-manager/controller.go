@@ -16,8 +16,6 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"strings"
-
-	basev1alpha1 "github.com/klovercloud-ci-cd/klovercloudcd-operator/api/v1alpha1"
 )
 
 type integrationManager struct {
@@ -90,13 +88,10 @@ func (i integrationManager) ModifyService(namespace string) service.IntegrationM
 	return i
 }
 
-func (i integrationManager) Apply(scheme *runtime.Scheme,wait bool) error {
+func (i integrationManager) Apply(config *v1alpha1.KlovercloudCD, scheme *runtime.Scheme, wait bool) error {
 	if i.Error != nil {
 		return i.Error
 	}
-
-	config := &basev1alpha1.KlovercloudCD{}
-
 	ctrl.SetControllerReference(config, &i.Configmap, scheme)
 	err := i.ApplyConfigMap()
 	if err != nil {
@@ -158,7 +153,7 @@ func (i integrationManager) ApplyService() error {
 }
 
 func getConfigMapFromFile() corev1.ConfigMap {
-	data, err := ioutil.ReadFile("integration-manager-configmap.yaml")
+	data, err := ioutil.ReadFile("descriptor/v0_0_1_beta/integration-manager/integration-manager-configmap.yaml")
 	if err != nil {
 		panic(err.Error())
 	}
@@ -172,7 +167,7 @@ func getConfigMapFromFile() corev1.ConfigMap {
 }
 
 func getServiceFromFile() corev1.Service {
-	data, err := ioutil.ReadFile("integration-manager-service.yaml")
+	data, err := ioutil.ReadFile("descriptor/v0_0_1_beta/integration-manager/integration-manager-service.yaml")
 	if err != nil {
 		panic(err.Error())
 	}
@@ -186,7 +181,7 @@ func getServiceFromFile() corev1.Service {
 }
 
 func getDeploymentFromFile() appv1.Deployment {
-	data, err := ioutil.ReadFile("integration-manager-deployment.yaml")
+	data, err := ioutil.ReadFile("descriptor/v0_0_1_beta/integration-manager/integration-manager-deployment.yaml")
 	if err != nil {
 		panic(err.Error())
 	}

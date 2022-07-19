@@ -18,8 +18,6 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"strings"
-
-	basev1alpha1 "github.com/klovercloud-ci-cd/klovercloudcd-operator/api/v1alpha1"
 )
 
 type agent struct {
@@ -146,12 +144,10 @@ func (a agent) ModifyService(namespace string) service.Agent {
 	return a
 }
 
-func (a agent) Apply(scheme *runtime.Scheme,wait bool) error {
+func (a agent) Apply(config *v1alpha1.KlovercloudCD, scheme *runtime.Scheme, wait bool) error {
 	if a.Error != nil {
 		return a.Error
 	}
-
-	config := &basev1alpha1.KlovercloudCD{}
 
 	ctrl.SetControllerReference(config, &a.ClusterRole, scheme)
 
@@ -217,7 +213,7 @@ func (a agent) ApplyService() error {
 }
 
 func getConfigMapFromFile() corev1.ConfigMap {
-	data, err := ioutil.ReadFile("agent-configmap.yaml")
+	data, err := ioutil.ReadFile("descriptor/v0_0_1_beta/agent/agent-configmap.yaml")
 	if err != nil {
 		panic(err.Error())
 	}
@@ -231,7 +227,7 @@ func getConfigMapFromFile() corev1.ConfigMap {
 }
 
 func getClusterRoleFromFile() rbacv1.ClusterRole {
-	data, err := ioutil.ReadFile("agent-cluster-role.yaml")
+	data, err := ioutil.ReadFile("descriptor/v0_0_1_beta/agent/agent-cluster-role.yaml")
 	if err != nil {
 		panic(err.Error())
 	}
@@ -245,7 +241,7 @@ func getClusterRoleFromFile() rbacv1.ClusterRole {
 }
 
 func getClusterRoleBindingFromFile() rbacv1.ClusterRoleBinding {
-	data, err := ioutil.ReadFile("agent-cluster-rolebinding.yaml")
+	data, err := ioutil.ReadFile("descriptor/v0_0_1_beta/agent/agent-cluster-rolebinding.yaml")
 	if err != nil {
 		panic(err.Error())
 	}
@@ -259,7 +255,7 @@ func getClusterRoleBindingFromFile() rbacv1.ClusterRoleBinding {
 }
 
 func getServiceAccountFromFile() corev1.ServiceAccount {
-	data, err := ioutil.ReadFile("agent-service-account.yaml")
+	data, err := ioutil.ReadFile("descriptor/v0_0_1_beta/agent/agent-service-account.yaml")
 	if err != nil {
 		panic(err.Error())
 	}
@@ -273,7 +269,7 @@ func getServiceAccountFromFile() corev1.ServiceAccount {
 }
 
 func getServiceFromFile() corev1.Service {
-	data, err := ioutil.ReadFile("agent-service.yaml")
+	data, err := ioutil.ReadFile("descriptor/v0_0_1_beta/agent/agent-service.yaml")
 	if err != nil {
 		panic(err.Error())
 	}
@@ -287,7 +283,7 @@ func getServiceFromFile() corev1.Service {
 }
 
 func getDeploymentFromFile() appv1.Deployment {
-	data, err := ioutil.ReadFile("agent-deployment.yaml")
+	data, err := ioutil.ReadFile("descriptor/v0_0_1_beta/agent/agent-deployment.yaml")
 	if err != nil {
 		panic(err.Error())
 	}

@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"github.com/klovercloud-ci-cd/klovercloudcd-operator/api/v1alpha1"
-	basev1alpha1 "github.com/klovercloud-ci-cd/klovercloudcd-operator/api/v1alpha1"
 	"github.com/klovercloud-ci-cd/klovercloudcd-operator/controllers/descriptor/v0_0_1_beta/service"
 	"io/ioutil"
 	appv1 "k8s.io/api/apps/v1"
@@ -14,7 +13,6 @@ import (
 	"k8s.io/client-go/kubernetes/scheme"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"strings"
 )
 
 type agent struct {
@@ -75,15 +73,6 @@ func (a agent) ModifyConfigmap(namespace string, agent v1alpha1.Agent) service.E
 	if agent.TerminalApiVersion != "" {
 		a.Configmap.Data["TERMINAL_API_VERSION"] = agent.TerminalApiVersion
 	}
-
-	EVENT_STORE_URL := a.Configmap.Data["EVENT_STORE_URL"]
-	replacedUrl := strings.ReplaceAll(EVENT_STORE_URL, ".klovercloud.", "."+namespace+".")
-	a.Configmap.Data["EVENT_STORE_URL"] = replacedUrl
-
-	API_SERVICE_URL := a.Configmap.Data["API_SERVICE_URL"]
-	replacedUrl = strings.ReplaceAll(API_SERVICE_URL, ".klovercloud.", "."+namespace+".")
-	a.Configmap.Data["API_SERVICE_URL"] = replacedUrl
-
 	return a
 }
 
@@ -111,13 +100,10 @@ func (a agent) ModifyService(namespace string) service.ExternalAgent {
 	return a
 }
 
-func (a agent) Apply(scheme *runtime.Scheme,wait bool) error {
+func (a agent) Apply(config *v1alpha1.ExternalAgent, scheme *runtime.Scheme, wait bool) error {
 	if a.Error != nil {
 		return a.Error
 	}
-
-	config := &basev1alpha1.KlovercloudCD{}
-
 	ctrl.SetControllerReference(config, &a.ClusterRole, scheme)
 	err := a.ApplyClusterRole()
 	if err != nil {
@@ -181,7 +167,7 @@ func (a agent) ApplyService() error {
 }
 
 func getConfigMapFromFile() corev1.ConfigMap {
-	data, err := ioutil.ReadFile("agent-configmap.yaml")
+	data, err := ioutil.ReadFile("descriptor/v0_0_1_beta/external-agent/agent-configmap.yaml")
 	if err != nil {
 		panic(err.Error())
 	}
@@ -195,7 +181,7 @@ func getConfigMapFromFile() corev1.ConfigMap {
 }
 
 func getClusterRoleFromFile() rbacv1.ClusterRole {
-	data, err := ioutil.ReadFile("agent-cluster-role.yaml")
+	data, err := ioutil.ReadFile("descriptor/v0_0_1_beta/external-agent/agent-cluster-role.yaml")
 	if err != nil {
 		panic(err.Error())
 	}
@@ -209,7 +195,7 @@ func getClusterRoleFromFile() rbacv1.ClusterRole {
 }
 
 func getClusterRoleBindingFromFile() rbacv1.ClusterRoleBinding {
-	data, err := ioutil.ReadFile("agent-cluster-rolebinding.yaml")
+	data, err := ioutil.ReadFile("descriptor/v0_0_1_beta/external-agent/agent-cluster-rolebinding.yaml")
 	if err != nil {
 		panic(err.Error())
 	}
@@ -223,7 +209,7 @@ func getClusterRoleBindingFromFile() rbacv1.ClusterRoleBinding {
 }
 
 func getServiceAccountFromFile() corev1.ServiceAccount {
-	data, err := ioutil.ReadFile("agent-service-account.yaml")
+	data, err := ioutil.ReadFile("descriptor/v0_0_1_beta/external-agent/agent-service-account.yaml")
 	if err != nil {
 		panic(err.Error())
 	}
@@ -237,7 +223,7 @@ func getServiceAccountFromFile() corev1.ServiceAccount {
 }
 
 func getServiceFromFile() corev1.Service {
-	data, err := ioutil.ReadFile("agent-service.yaml")
+	data, err := ioutil.ReadFile("descriptor/v0_0_1_beta/external-agent/agent-service.yaml")
 	if err != nil {
 		panic(err.Error())
 	}
@@ -251,7 +237,7 @@ func getServiceFromFile() corev1.Service {
 }
 
 func getDeploymentFromFile() appv1.Deployment {
-	data, err := ioutil.ReadFile("agent-deployment.yaml")
+	data, err := ioutil.ReadFile("descriptor/v0_0_1_beta/external-agent/agent-deployment.yaml")
 	if err != nil {
 		panic(err.Error())
 	}

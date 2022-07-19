@@ -43,6 +43,20 @@ type ExternalAgentReconciler struct {
 //+kubebuilder:rbac:groups=base.cd.klovercloud.com,resources=externalagents,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups=base.cd.klovercloud.com,resources=externalagents/status,verbs=get;update;patch
 //+kubebuilder:rbac:groups=base.cd.klovercloud.com,resources=externalagents/finalizers,verbs=update
+//+kubebuilder:rbac:groups=apps,resources=deployments,verbs=get;list;watch;create;update;patch;delete
+//+kubebuilder:rbac:groups=apps,resources=deployments/status,verbs=get
+//+kubebuilder:rbac:groups=apps,resources=statefulsets,verbs=get;list;watch;create;update;patch;delete
+//+kubebuilder:rbac:groups=apps,resources=statefulsets/status,verbs=get
+//+kubebuilder:rbac:groups=core,resources=pods,verbs=get;list;watch
+//+kubebuilder:rbac:groups=core,resources=pods/status,verbs=get
+//+kubebuilder:rbac:groups=core,resources=events,verbs=get;list;watch;create;update;patch;delete
+//+kubebuilder:rbac:groups=core,resources=events/status,verbs=get
+//+kubebuilder:rbac:groups=core,resources=services,verbs=get;list;watch;create;update;patch;delete
+//+kubebuilder:rbac:groups=core,resources=services/status,verbs=get
+//+kubebuilder:rbac:groups=core,resources=secrets,verbs=get;list;watch;create;update;patch;delete
+//+kubebuilder:rbac:groups=core,resources=configmaps,verbs=get;list;watch;create;update;patch;delete
+//+kubebuilder:rbac:groups=extensions,resources=ingresses,verbs=get;list;watch;create;update;patch;delete
+//+kubebuilder:rbac:groups=extensions,resources=ingresses/status,verbs=get
 
 // Reconcile is part of the main kubernetes reconciliation loop which aims to
 // move the current state of the cluster closer to the desired state.
@@ -75,7 +89,7 @@ func (r *ExternalAgentReconciler) Reconcile(ctx context.Context, req ctrl.Reques
 	err = r.Get(ctx, types.NamespacedName{Name: "klovercloud-ci-agent", Namespace: config.Namespace}, existingAgent)
 	if err != nil && errors.IsNotFound(err) {
 		// Define a new deployment
-		err = descriptor.ApplyExternalAgent(r.Client,r.Scheme, config.Namespace, config.Spec.Agent, string(config.Spec.Version))
+		err = descriptor.ApplyExternalAgent(r.Client, config, r.Scheme, config.Namespace, config.Spec.Agent, string(config.Spec.Version))
 		if err != nil {
 			log.Error(err, "Failed to create external agent Deployment", "Deployment.Namespace", config.Namespace, "Deployment.Name", "klovercloud-ci-agent")
 			return ctrl.Result{}, err
@@ -129,7 +143,7 @@ func (r *ExternalAgentReconciler) Reconcile(ctx context.Context, req ctrl.Reques
 			log.Error(err, "Failed to update external agent configmap.", "Namespace:", existingAgent.Namespace, "Name:", existingAgent.Name)
 			return ctrl.Result{}, err
 		}
-		redeploy=true
+		redeploy = true
 	}
 	if redeploy {
 		existingAgent.Spec.Template.ObjectMeta.Annotations = map[string]string{"kubectl.kubernetes.io/restartedAt": time.Now().Format(time.RFC3339)}
