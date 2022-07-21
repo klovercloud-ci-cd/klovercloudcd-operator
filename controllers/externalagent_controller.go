@@ -126,8 +126,8 @@ func (r *ExternalAgentReconciler) Reconcile(ctx context.Context, req ctrl.Reques
 	}
 	for i, each := range existingAgent.Spec.Template.Spec.Containers {
 		if each.Name == "app" {
-			isRequestedResourcesChanged := each.Resources.Requests.Cpu() != config.Spec.Agent.Resources.Requests.Cpu() || each.Resources.Requests.Memory() != config.Spec.Agent.Resources.Requests.Memory()
-			isLimitedRequestedChanged := each.Resources.Limits.Cpu() != config.Spec.Agent.Resources.Limits.Cpu() || each.Resources.Limits.Memory() != config.Spec.Agent.Resources.Limits.Memory()
+			isRequestedResourcesChanged := each.Resources.Requests.Cpu().ToDec().String() != config.Spec.Agent.Resources.Requests.Cpu().ToDec().String() || each.Resources.Requests.Memory().ToDec().String() != config.Spec.Agent.Resources.Requests.Memory().ToDec().String()
+			isLimitedRequestedChanged := each.Resources.Limits.Cpu().ToDec().String() != config.Spec.Agent.Resources.Limits.Cpu().ToDec().String() || each.Resources.Limits.Memory().ToDec().String() != config.Spec.Agent.Resources.Limits.Memory().ToDec().String()
 
 			if isRequestedResourcesChanged || isLimitedRequestedChanged {
 				redeploy = true
