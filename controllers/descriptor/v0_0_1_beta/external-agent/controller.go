@@ -11,8 +11,10 @@ import (
 	rbacv1 "k8s.io/api/rbac/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/kubernetes/scheme"
+	"log"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"strings"
 )
 
 type agent struct {
@@ -107,27 +109,42 @@ func (a agent) Apply(config *v1alpha1.ExternalAgent, scheme *runtime.Scheme, wai
 	ctrl.SetControllerReference(config, &a.ClusterRole, scheme)
 	err := a.ApplyClusterRole()
 	if err != nil {
-		return err
+		if strings.Contains(err.Error(), "already exists") {
+			log.Println(err.Error())
+		} else {
+			return err
+		}
 	}
 
 	ctrl.SetControllerReference(config, &a.ServiceAccount, scheme)
 	err = a.ApplyServiceAccount()
 	if err != nil {
-		return err
+		if strings.Contains(err.Error(), "already exists") {
+			log.Println(err.Error())
+		} else {
+			return err
+		}
 	}
 
 	ctrl.SetControllerReference(config, &a.ClusterRoleBinding, scheme)
 	err = a.ApplyClusterRoleBinding()
 	if err != nil {
-		return err
+		if strings.Contains(err.Error(), "already exists") {
+			log.Println(err.Error())
+		} else {
+			return err
+		}
 	}
 
 	ctrl.SetControllerReference(config, &a.Configmap, scheme)
 	err = a.ApplyConfigMap()
 	if err != nil {
-		return err
+		if strings.Contains(err.Error(), "already exists") {
+			log.Println(err.Error())
+		} else {
+			return err
+		}
 	}
-
 	ctrl.SetControllerReference(config, &a.Deployment, scheme)
 	err = a.ApplyDeployment()
 	if err != nil {
@@ -137,7 +154,11 @@ func (a agent) Apply(config *v1alpha1.ExternalAgent, scheme *runtime.Scheme, wai
 	ctrl.SetControllerReference(config, &a.Service, scheme)
 	err = a.ApplyService()
 	if err != nil {
-		return err
+		if strings.Contains(err.Error(), "already exists") {
+			log.Println(err.Error())
+		} else {
+			return err
+		}
 	}
 	return nil
 }
