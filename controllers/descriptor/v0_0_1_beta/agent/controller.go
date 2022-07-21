@@ -77,7 +77,7 @@ func (a agent) ModifyConfigmap(namespace string, agent v1alpha1.Agent) service.A
 	}
 
 	if len(apiServicePodListObject.Items) > 0 {
-		data, _, err := utility.ExecuteRemoteCommand(a.RestConfig, apiServicePodListObject.Items[0].Name, apiServicePodListObject.Items[0].Namespace, "app", []string{"kcpctl", "generate-jwt", "client=local_agent"})
+		data, _, err := utility.ExecuteRemoteCommand(a.RestConfig, apiServicePodListObject.Items[0].Name, apiServicePodListObject.Items[0].Namespace, "app", []string{"kcpctl generate-jwt client=local_agent"})
 
 		if err != nil {
 			log.Println(err, "[ERROR]: Failed to generate token.", "Pod.Namespace: ", namespace, ", Pod.Name: ", apiServicePodListObject.Items[0].Name)
@@ -85,9 +85,9 @@ func (a agent) ModifyConfigmap(namespace string, agent v1alpha1.Agent) service.A
 			return a
 		}
 		if data != "" {
-			outputs := strings.Split(data, " ")
+			outputs := strings.Split(data, ": ")
 			if len(outputs) == 2 {
-				a.Configmap.Data["TOKEN"] = outputs[1]
+				a.Configmap.Data["TOKEN"] = strings.TrimSpace(outputs[1])
 			} else {
 				a.Error = errors.New("[ERROR]: Failed to generate token. Expected format: token:  <token> . Found: " + data)
 				return a
@@ -153,19 +153,31 @@ func (a agent) Apply(config *v1alpha1.KlovercloudCD, scheme *runtime.Scheme, wai
 
 	err := a.ApplyClusterRole()
 	if err != nil {
-		return err
+		if strings.Contains(err.Error(), "already exists") {
+			log.Println(err.Error())
+		} else {
+			return err
+		}
 	}
 
 	ctrl.SetControllerReference(config, &a.ServiceAccount, scheme)
 	err = a.ApplyServiceAccount()
 	if err != nil {
-		return err
+		if strings.Contains(err.Error(), "already exists") {
+			log.Println(err.Error())
+		} else {
+			return err
+		}
 	}
 
 	ctrl.SetControllerReference(config, &a.ClusterRoleBinding, scheme)
 	err = a.ApplyClusterRoleBinding()
 	if err != nil {
-		return err
+		if strings.Contains(err.Error(), "already exists") {
+			log.Println(err.Error())
+		} else {
+			return err
+		}
 	}
 
 	ctrl.SetControllerReference(config, &a.Configmap, scheme)

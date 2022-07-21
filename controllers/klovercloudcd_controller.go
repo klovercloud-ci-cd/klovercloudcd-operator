@@ -41,6 +41,7 @@ import (
 type KlovercloudCDReconciler struct {
 	client.Client
 	*rest.Config
+
 	Scheme *runtime.Scheme
 }
 
@@ -106,7 +107,7 @@ func (r *KlovercloudCDReconciler) Reconcile(ctx context.Context, req ctrl.Reques
 	err = r.Get(ctx, types.NamespacedName{Name: "klovercloud-mongo-secret", Namespace: config.Namespace}, existingMongoSecret)
 	if err != nil && errors.IsNotFound(err) {
 		// Define a new deployment
-		err = descriptor.ApplyPrerequisites(r.Client, config, r.Scheme, config.Namespace, config.Spec.Database, config.Spec.Security, string(config.Spec.Version))
+		err = descriptor.ApplyPrerequisites(r.Client, r.Config, config, r.Scheme, config.Namespace, config.Spec.Database, config.Spec.Security, string(config.Spec.Version))
 		if err != nil {
 			log.Error(err, "Failed to apply Prerequisites.", err.Error())
 			return ctrl.Result{}, err
@@ -908,18 +909,12 @@ func (r *KlovercloudCDReconciler) Reconcile(ctx context.Context, req ctrl.Reques
 
 		// Update status.Nodes if needed
 		if !reflect.DeepEqual(podNames, config.Status.LightHouseCommandPods) {
-			config.Status.EventBankPods = podNames
+			config.Status.LightHouseCommandPods = podNames
 			if len(config.Status.LightHouseQueryPods) == 0 {
 				config.Status.LightHouseQueryPods = []string{}
-			}
-			if len(config.Status.LightHouseCommandPods) == 0 {
-				config.Status.LightHouseCommandPods = []string{}
 			}
 			if len(config.Status.SecurityPods) == 0 {
 				config.Status.SecurityPods = []string{}
-			}
-			if len(config.Status.LightHouseQueryPods) == 0 {
-				config.Status.LightHouseQueryPods = []string{}
 			}
 			if len(config.Status.ConsolePods) == 0 {
 				config.Status.ConsolePods = []string{}
@@ -1042,9 +1037,6 @@ func (r *KlovercloudCDReconciler) Reconcile(ctx context.Context, req ctrl.Reques
 			}
 			if len(config.Status.LightHouseQueryPods) == 0 {
 				config.Status.LightHouseQueryPods = []string{}
-			}
-			if len(config.Status.LightHouseCommandPods) == 0 {
-				config.Status.LightHouseCommandPods = []string{}
 			}
 			if len(config.Status.SecurityPods) == 0 {
 				config.Status.SecurityPods = []string{}
@@ -1210,9 +1202,6 @@ func (r *KlovercloudCDReconciler) Reconcile(ctx context.Context, req ctrl.Reques
 		}
 		if len(config.Status.SecurityPods) == 0 {
 			config.Status.SecurityPods = []string{}
-		}
-		if len(config.Status.LightHouseQueryPods) == 0 {
-			config.Status.LightHouseQueryPods = []string{}
 		}
 		if len(config.Status.ConsolePods) == 0 {
 			config.Status.ConsolePods = []string{}

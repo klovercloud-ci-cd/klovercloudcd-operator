@@ -26,9 +26,9 @@ func ApplySecurity(client client.Client, config *v1alpha1.KlovercloudCD, scheme 
 	}
 	return errors.New("[ERROR]: Version is not valid! Failed to apply security service")
 }
-func ApplyPrerequisites(client client.Client, config *v1alpha1.KlovercloudCD, scheme *runtime.Scheme, namespace string, db v1alpha1.DB, v1alpha1Security v1alpha1.Security, version string) error {
+func ApplyPrerequisites(client client.Client, restConfig *rest.Config, config *v1alpha1.KlovercloudCD, scheme *runtime.Scheme, namespace string, db v1alpha1.DB, v1alpha1Security v1alpha1.Security, version string) error {
 	if version == string(enums.V0_0_1_BETA) {
-		return v0_0_1_betaPrerequisites.New(client).ModifySecret(namespace, db).ModifyTektonDescriptor(namespace).ModifySecurityConfigMap(namespace, db, v1alpha1Security).Apply(config, scheme)
+		return v0_0_1_betaPrerequisites.New(client, restConfig).ModifySecret(namespace, db).ModifyTektonDescriptor(namespace).ModifySecurityConfigMap(namespace, db, v1alpha1Security).Apply(config, scheme)
 	}
 	return errors.New("[ERROR]: Version is not valid! Failed to apply prerequisites")
 }
