@@ -34,7 +34,7 @@ metadata:
  name: klovercloudcd-sample #KlovercloudCD name
  namespace: <your namespace> #namespce where want to install custom resources
 spec:
- version: v0.0.1-beta #klovercloudCD version
+ version: <version> #klovercloudCD version
  db:
    type: MONGO #klovercloudCD database type
    user_name: <database username>
@@ -173,7 +173,7 @@ metadata:
  name: externalagent-sample
  namespace: klovercloud
 spec:
- version: v0.0.1-beta
+ version: <version>
  agent:
    size: 1
    pull_size: "5"
@@ -204,7 +204,7 @@ metadata:
   name: console-sample
   namespace: klovercloud
 spec:
-  version: v0.0.1-beta
+  version: <version>
   console:
     size: 1
     auth_endpoint: http://<security-service-endpoint>/api/v1
