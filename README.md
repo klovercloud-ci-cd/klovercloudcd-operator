@@ -90,9 +90,6 @@ spec:
    size: 1
    pull_size: "5" #number of jobs at a time
    light_house_enabled: "true" #to enable lighthouse
-#    terminal_base_url: 
-#    terminal_api_version:
-#    event_store_url:
    resources:
      requests:
        cpu: 100m
@@ -104,8 +101,8 @@ spec:
    size: 1
    per_day_total_process: "200" 
    concurrent_process: "10"
-   github_webhook_consuming_url: "<baseurl of api service>/api/v1/githubs" 
-   bitbucket_webhook_consuming_url: "<baseurl of api service>/api/v1/bitbuckets"
+   github_webhook_consuming_url: http://<api-service-url>/api/v1/githubs
+   bitbucket_webhook_consuming_url: http://<api-service-url>/api/v1/bitbuckets
    pipeline_purging: "ENABLE" #resources purging flag
    resources:
      requests:
@@ -133,26 +130,6 @@ spec:
      limits:
        cpu: 100m
        memory: 256Mi
-# console:
-#   enabled: "false"
-#   size: 1
-#   resources:
-#     requests:
-#       cpu: 100m
-#       memory: 256Mi
-#     limits:
-#       cpu: 100m
-#       memory: 256Mi
-# terminal:
-#   enabled: "false"
-#   size: 1
-#   resources:
-#     requests:
-#       cpu: 100m
-#       memory: 256Mi
-#     limits:
-#       cpu: 100m
-#       memory: 256Mi
 
 ```
 
@@ -177,9 +154,7 @@ spec:
    pull_size: "5"
    light_house_enabled: "true"
    token: "" #agent token generated from api service
-   #    terminal_base_url:
-   #    terminal_api_version:
-   event_store_url: "" #api service url
+   event_store_url: http://<api-service-url>/api/v1 #api service url
    resources:
      requests:
        cpu: 100m
@@ -195,14 +170,48 @@ spec:
 kubectl apply -f klovercloud_external_agent.yaml
 ```
 
+#### Create UI console:
+Create a file named ```klovercloud_ui_console.yaml```
+```yaml
+apiVersion: base.cd.klovercloud.com/v1alpha1
+kind: Console
+metadata:
+  name: console-sample
+  namespace: klovercloud
+spec:
+  version: v0.0.1-beta
+  console:
+    size: 1
+    auth_endpoint: http://<security-service-endpoint>/api/v1
+    api_endpoint: http://<api-service-endpoint>/api/v1
+    api_endpoint_ws: ws://<api-service-endpoint>/api/v1
+    resources:
+      requests:
+        cpu: 100m
+        memory: 256Mi
+      limits:
+        cpu: 100m
+        memory: 256Mi
+```
+
+#### Apply:
+```shell
+kubectl apply -f klovercloud_ui_console.yaml
+```
+
 #### Delete klovercloudCD:
 ```shell
 kubectl delete -f klovercloudcd.yaml
 ```
 
-#### Delete external agent of klovercloudCD:
+#### Delete external agent:
 ```shell
 kubectl delete -f klovercloud_external_agent.yaml
+```
+
+#### Delete console:
+```shell
+kubectl delete -f klovercloud_ui_console.yaml
 ```
 
 #### Delete operator:
