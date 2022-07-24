@@ -102,9 +102,9 @@ func DeleteLightHouseCommand(client client.Client, version string) error {
 	return errors.New("[ERROR]: Version is not valid! Failed to delete lighthouse command")
 }
 
-func ApplyConsole(client client.Client, config *v1alpha1.KlovercloudCD, scheme *runtime.Scheme, namespace string, console v1alpha1.Console, version string) error {
+func ApplyConsole(client client.Client, config *v1alpha1.Console, scheme *runtime.Scheme, namespace string, version string) error {
 	if version == string(enums.V0_0_1_BETA) {
-		return v0_0_1_betaConsole.New(client).ModifyConfigmap(namespace).ModifyDeployment(namespace, console).ModifyService(namespace).Apply(config, scheme, true)
+		return v0_0_1_betaConsole.New(client).ModifyConfigmap(namespace, config.Spec.Console).ModifyDeployment(namespace, config.Spec.Console).ModifyService(namespace).Apply(config, scheme, true)
 	}
 	return errors.New("[ERROR]: Version is not valid! Failed to apply ci console")
 }

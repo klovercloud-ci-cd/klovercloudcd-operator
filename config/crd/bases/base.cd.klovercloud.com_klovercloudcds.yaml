@@ -135,8 +135,16 @@ spec:
               console:
                 description: Console config of Console server
                 properties:
-                  enabled:
-                    description: Enabled can be true or false.
+                  api_endpoint:
+                    description: ApiEndpoint is url of api service external url .
+                    type: string
+                  api_endpoint_ws:
+                    description: ApiEndpointWS is websocket url of api service external
+                      url .
+                    type: string
+                  auth_endpoint:
+                    description: AuthEndPoint is url of security service external
+                      url .
                     type: string
                   resources:
                     description: Resources defines cpu, memory requests and limits
@@ -169,7 +177,9 @@ spec:
                     format: int32
                     type: integer
                 required:
-                - enabled
+                - api_endpoint
+                - api_endpoint_ws
+                - auth_endpoint
                 - size
                 type: object
               core_engine:

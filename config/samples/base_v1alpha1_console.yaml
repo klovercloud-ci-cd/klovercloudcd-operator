@@ -1,0 +1,21 @@
+apiVersion: base.cd.klovercloud.com/v1alpha1
+kind: Console
+metadata:
+  name: console-sample
+  namespace: klovercloud
+spec:
+  version: v0.0.1-beta
+  console:
+    size: 1
+    auth_endpoint: "abc"
+    api_endpoint: "abc"
+    api_endpoint_ws: "adcws"
+    resources:
+      requests:
+        cpu: 100m
+        memory: 256Mi
+      limits:
+        cpu: 100m
+        memory: 256Mi
+
+  # TODO(user): Add fields here

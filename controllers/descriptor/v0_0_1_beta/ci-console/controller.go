@@ -14,7 +14,6 @@ import (
 	"log"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"strings"
 )
 
 type console struct {
@@ -25,32 +24,23 @@ type console struct {
 	Error      error
 }
 
-func (c console) ModifyConfigmap(namespace string) service.Console {
+func (c console) ModifyConfigmap(namespace string, console v1alpha1.UIConsole) service.Console {
 	if c.Configmap.ObjectMeta.Labels == nil {
 		c.Configmap.ObjectMeta.Labels = make(map[string]string)
 	}
 	c.Configmap.ObjectMeta.Labels["app"] = "klovercloudCD"
 	c.Configmap.ObjectMeta.Namespace = namespace
-
-	v1AuthEndpoint := c.Configmap.Data["v1AuthEndpoint"]
-	replacedUrl := strings.ReplaceAll(v1AuthEndpoint, ".klovercloud.", "."+namespace+".")
-	c.Configmap.Data["v1AuthEndpoint"] = replacedUrl
-
-	v1ApiEndPoint := c.Configmap.Data["v1ApiEndPoint"]
-	replacedUrl = strings.ReplaceAll(v1ApiEndPoint, ".klovercloud.", "."+namespace+".")
-	c.Configmap.Data["v1ApiEndPoint"] = replacedUrl
-
-	v1ApiEndPointWS := c.Configmap.Data["v1ApiEndPointWS"]
-	replacedUrl = strings.ReplaceAll(v1ApiEndPointWS, ".klovercloud.", "."+namespace+".")
-	c.Configmap.Data["v1ApiEndPointWS"] = replacedUrl
-
+	c.Configmap.Data["v1AuthEndpoint"] = console.AuthEndpoint
+	c.Configmap.Data["v1ApiEndPoint"] = console.ApiEndpoint
+	c.Configmap.Data["v1ApiEndPointWS"] = console.ApiEndpointWS
 	return c
 }
 
-func (c console) ModifyDeployment(namespace string, console v1alpha1.Console) service.Console {
+func (c console) ModifyDeployment(namespace string, console v1alpha1.UIConsole) service.Console {
 	if c.Deployment.ObjectMeta.Labels == nil {
 		c.Deployment.ObjectMeta.Labels = make(map[string]string)
 	}
+
 	c.Deployment.ObjectMeta.Labels["app"] = "klovercloudCD"
 	c.Deployment.ObjectMeta.Namespace = namespace
 	if console.Resources.Requests.Cpu() != nil || console.Resources.Limits.Cpu() != nil {
@@ -71,7 +61,7 @@ func (c console) ModifyService(namespace string) service.Console {
 	return c
 }
 
-func (c console) Apply(config *v1alpha1.KlovercloudCD, scheme *runtime.Scheme, wait bool) error {
+func (c console) Apply(config *v1alpha1.Console, scheme *runtime.Scheme, wait bool) error {
 	if c.Error != nil {
 		return c.Error
 	}
@@ -134,7 +124,7 @@ func (c console) ApplyService() error {
 }
 
 func getConfigMapFromFile() corev1.ConfigMap {
-	data, err := ioutil.ReadFile("descriptor/v0_0_1_beta/ci-console/ci-console-configMap.yml")
+	data, err := ioutil.ReadFile("descriptor/v0_0_1_beta/ci-console/ci-console-configmap.yml")
 	if err != nil {
 		panic(err.Error())
 	}
