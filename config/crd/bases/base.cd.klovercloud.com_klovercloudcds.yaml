@@ -132,56 +132,6 @@ spec:
                 required:
                 - size
                 type: object
-              console:
-                description: Console config of Console server
-                properties:
-                  api_endpoint:
-                    description: ApiEndpoint is url of api service external url .
-                    type: string
-                  api_endpoint_ws:
-                    description: ApiEndpointWS is websocket url of api service external
-                      url .
-                    type: string
-                  auth_endpoint:
-                    description: AuthEndPoint is url of security service external
-                      url .
-                    type: string
-                  resources:
-                    description: Resources defines cpu, memory requests and limits
-                    properties:
-                      limits:
-                        additionalProperties:
-                          anyOf:
-                          - type: integer
-                          - type: string
-                          pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
-                          x-kubernetes-int-or-string: true
-                        description: 'Limits describes the maximum amount of compute
-                          resources allowed. More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/'
-                        type: object
-                      requests:
-                        additionalProperties:
-                          anyOf:
-                          - type: integer
-                          - type: string
-                          pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
-                          x-kubernetes-int-or-string: true
-                        description: 'Requests describes the minimum amount of compute
-                          resources required. If Requests is omitted for a container,
-                          it defaults to Limits if that is explicitly specified, otherwise
-                          to an implementation-defined value. More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/'
-                        type: object
-                    type: object
-                  size:
-                    description: Size is the number of instance
-                    format: int32
-                    type: integer
-                required:
-                - api_endpoint
-                - api_endpoint_ws
-                - auth_endpoint
-                - size
-                type: object
               core_engine:
                 description: CoreEngine config of CoreEngine server
                 properties:
@@ -547,7 +497,6 @@ spec:
                   in enums.VERSIONS
                 type: string
             required:
-            - console
             - core_engine
             - db
             - event_bank
@@ -564,11 +513,6 @@ spec:
                 type: array
               api_service_pods:
                 description: ApiServicePods are the names of the ApiService pods
-                items:
-                  type: string
-                type: array
-              console_pods:
-                description: ConsolePods are the names of the Console pods
                 items:
                   type: string
                 type: array
@@ -613,7 +557,6 @@ spec:
             required:
             - agent_pods
             - api_service_pods
-            - console_pods
             - core_engine_pods
             - event_bank_pods
             - integration_manager_pods

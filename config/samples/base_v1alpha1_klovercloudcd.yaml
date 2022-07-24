@@ -107,16 +107,6 @@ spec:
       limits:
         cpu: 100m
         memory: 256Mi
-  console:
-    enabled: "false"
-    size: 1
-    resources:
-      requests:
-        cpu: 100m
-        memory: 256Mi
-      limits:
-        cpu: 100m
-        memory: 256Mi
   terminal:
     enabled: "false"
     size: 1

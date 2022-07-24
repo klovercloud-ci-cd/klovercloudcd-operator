@@ -298,9 +298,6 @@ func (r *KlovercloudCDReconciler) Reconcile(ctx context.Context, req ctrl.Reques
 		if len(config.Status.LightHouseQueryPods) == 0 {
 			config.Status.LightHouseQueryPods = []string{}
 		}
-		if len(config.Status.ConsolePods) == 0 {
-			config.Status.ConsolePods = []string{}
-		}
 		if len(config.Status.CoreEnginePods) == 0 {
 			config.Status.CoreEnginePods = []string{}
 		}
@@ -457,9 +454,6 @@ func (r *KlovercloudCDReconciler) Reconcile(ctx context.Context, req ctrl.Reques
 		if len(config.Status.LightHouseQueryPods) == 0 {
 			config.Status.LightHouseQueryPods = []string{}
 		}
-		if len(config.Status.ConsolePods) == 0 {
-			config.Status.ConsolePods = []string{}
-		}
 		if len(config.Status.CoreEnginePods) == 0 {
 			config.Status.CoreEnginePods = []string{}
 		}
@@ -589,9 +583,6 @@ func (r *KlovercloudCDReconciler) Reconcile(ctx context.Context, req ctrl.Reques
 		if len(config.Status.LightHouseQueryPods) == 0 {
 			config.Status.LightHouseQueryPods = []string{}
 		}
-		if len(config.Status.ConsolePods) == 0 {
-			config.Status.ConsolePods = []string{}
-		}
 		if len(config.Status.CoreEnginePods) == 0 {
 			config.Status.CoreEnginePods = []string{}
 		}
@@ -708,9 +699,6 @@ func (r *KlovercloudCDReconciler) Reconcile(ctx context.Context, req ctrl.Reques
 		if len(config.Status.LightHouseQueryPods) == 0 {
 			config.Status.LightHouseQueryPods = []string{}
 		}
-		if len(config.Status.ConsolePods) == 0 {
-			config.Status.ConsolePods = []string{}
-		}
 		if len(config.Status.AgentPods) == 0 {
 			config.Status.AgentPods = []string{}
 		}
@@ -791,9 +779,6 @@ func (r *KlovercloudCDReconciler) Reconcile(ctx context.Context, req ctrl.Reques
 		}
 		if len(config.Status.LightHouseQueryPods) == 0 {
 			config.Status.LightHouseQueryPods = []string{}
-		}
-		if len(config.Status.ConsolePods) == 0 {
-			config.Status.ConsolePods = []string{}
 		}
 		if len(config.Status.CoreEnginePods) == 0 {
 			config.Status.CoreEnginePods = []string{}
@@ -914,9 +899,6 @@ func (r *KlovercloudCDReconciler) Reconcile(ctx context.Context, req ctrl.Reques
 			}
 			if len(config.Status.SecurityPods) == 0 {
 				config.Status.SecurityPods = []string{}
-			}
-			if len(config.Status.ConsolePods) == 0 {
-				config.Status.ConsolePods = []string{}
 			}
 			if len(config.Status.CoreEnginePods) == 0 {
 				config.Status.CoreEnginePods = []string{}
@@ -1039,9 +1021,6 @@ func (r *KlovercloudCDReconciler) Reconcile(ctx context.Context, req ctrl.Reques
 			}
 			if len(config.Status.SecurityPods) == 0 {
 				config.Status.SecurityPods = []string{}
-			}
-			if len(config.Status.ConsolePods) == 0 {
-				config.Status.ConsolePods = []string{}
 			}
 			if len(config.Status.CoreEnginePods) == 0 {
 				config.Status.CoreEnginePods = []string{}
@@ -1201,9 +1180,6 @@ func (r *KlovercloudCDReconciler) Reconcile(ctx context.Context, req ctrl.Reques
 		}
 		if len(config.Status.SecurityPods) == 0 {
 			config.Status.SecurityPods = []string{}
-		}
-		if len(config.Status.ConsolePods) == 0 {
-			config.Status.ConsolePods = []string{}
 		}
 		if len(config.Status.CoreEnginePods) == 0 {
 			config.Status.CoreEnginePods = []string{}

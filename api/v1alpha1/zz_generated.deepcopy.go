@@ -381,7 +381,6 @@ func (in *KlovercloudCDSpec) DeepCopyInto(out *KlovercloudCDSpec) {
 	in.IntegrationManager.DeepCopyInto(&out.IntegrationManager)
 	in.EventBank.DeepCopyInto(&out.EventBank)
 	in.CoreEngine.DeepCopyInto(&out.CoreEngine)
-	in.Console.DeepCopyInto(&out.Console)
 	in.Terminal.DeepCopyInto(&out.Terminal)
 }
 
@@ -435,11 +434,6 @@ func (in *KlovercloudCDStatus) DeepCopyInto(out *KlovercloudCDStatus) {
 	}
 	if in.CoreEnginePods != nil {
 		in, out := &in.CoreEnginePods, &out.CoreEnginePods
-		*out = make([]string, len(*in))
-		copy(*out, *in)
-	}
-	if in.ConsolePods != nil {
-		in, out := &in.ConsolePods, &out.ConsolePods
 		*out = make([]string, len(*in))
 		copy(*out, *in)
 	}
