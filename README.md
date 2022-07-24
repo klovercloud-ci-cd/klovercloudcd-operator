@@ -16,10 +16,14 @@ git clone https://github.com/klovercloud-ci-cd/klovercloudcd-operator -b v0.0.1-
 ```sh
 make deploy IMG=quay.io/klovercloud/klovercloudcd-operator:<tag>
 ```
+#### Example:
+```sh
+make deploy IMG=quay.io/klovercloud/klovercloudcd-operator:v0.0.1-beta
+```
 
 #### Create namespace:
 ```shell
-kubectl create ns <namespace name>
+kubectl create ns <name>
 ```
 #### Create Klovercloud CD:
 Create a file named ```klovercloudcd.yaml```
@@ -139,6 +143,27 @@ kubectl apply -f klovercloudcd.yaml
 ```
 
 #### Create external agent:
+Every kubernetes cluster should run an agent; agent needs token to talk to api-service securely.
+To generate a token follow the steps:
+
+Exec into api service pod, run:
+
+```
+kubectl exec -it <api service pod> -n <namespace> bash
+```
+
+Generate agent token, run:
+
+```
+kcpctl generate-jwt client=<your agent name> // agent name should be unique
+```
+
+It will create a token like,
+
+```
+token:  <token>
+```
+
 Create a file named ```klovercloud_external_agent.yaml```
 
 ```yaml
@@ -153,7 +178,7 @@ spec:
    size: 1
    pull_size: "5"
    light_house_enabled: "true"
-   token: "" #agent token generated from api service
+   token: <token> #agent token generated from api service
    event_store_url: http://<api-service-url>/api/v1 #api service url
    resources:
      requests:
