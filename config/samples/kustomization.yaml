@@ -2,4 +2,5 @@
 resources:
 - base_v1alpha1_klovercloudcd.yaml
 - base_v1alpha1_externalagent.yaml
+- base_v1alpha1_console.yaml
 #+kubebuilder:scaffold:manifestskustomizesamples

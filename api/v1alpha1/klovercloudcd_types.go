@@ -57,9 +57,6 @@ type KlovercloudCDSpec struct {
 	// CoreEngine config of CoreEngine server
 	CoreEngine CoreEngine `json:"core_engine"`
 
-	// Console config of Console server
-	Console Console `json:"console"`
-
 	// Terminal config of Terminal server
 	Terminal Terminal `json:"terminal"`
 }
@@ -93,27 +90,12 @@ type KlovercloudCDStatus struct {
 	// CoreEnginePods are the names of the CoreEngine pods
 	CoreEnginePods []string `json:"core_engine_pods"`
 
-	// ConsolePods are the names of the Console pods
-	ConsolePods []string `json:"console_pods"`
-
 	// TerminalPods are the names of the Terminal pods
 	TerminalPods []string `json:"terminal_pods"`
 }
 
 // Terminal defines the config of Terminal service
 type Terminal struct {
-	// Enabled can be true or false.
-	Enabled string `json:"enabled"`
-
-	// Size is the number of instance
-	Size int32 `json:"size"`
-
-	// Resources defines cpu, memory requests and limits
-	Resources corev1.ResourceRequirements `json:"resources,omitempty" protobuf:"bytes,8,opt,name=resources"`
-}
-
-// Console defines the config of Console service
-type Console struct {
 	// Enabled can be true or false.
 	Enabled string `json:"enabled"`
 
