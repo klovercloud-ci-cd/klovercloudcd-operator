@@ -633,6 +633,10 @@ func (r *KlovercloudCDReconciler) Reconcile(ctx context.Context, req ctrl.Reques
 		existingCoreEngineConfigmap.Data["ALLOWED_CONCURRENT_BUILD"] = strconv.Itoa(config.Spec.CoreEngine.NumberOfConcurrentProcess)
 	}
 
+	if existingCoreEngineConfigmap.Data["CI_NAMESPACE"] != config.Namespace {
+		redeploy = true
+		existingCoreEngineConfigmap.Data["CI_NAMESPACE"] = config.Namespace
+	}
 	if *existingCoreEngine.Spec.Replicas != config.Spec.CoreEngine.Size {
 		redeploy = true
 		existingCoreEngine.Spec.Replicas = &config.Spec.CoreEngine.Size

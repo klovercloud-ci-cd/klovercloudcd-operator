@@ -38,6 +38,7 @@ func (c coreEngine) ModifyConfigmap(namespace string, coreEngine v1alpha1.CoreEn
 	}
 	c.ConfigMap.ObjectMeta.Labels["app"] = "klovercloudCD"
 	c.ConfigMap.ObjectMeta.Namespace = namespace
+	c.ConfigMap.Data["CI_NAMESPACE"] = namespace
 	if db.Type == enums.MONGO || db.Type == "" {
 		c.ConfigMap.Data["MONGO"] = string(enums.MONGO)
 		c.ConfigMap.Data["MONGO_SERVER"] = db.ServerURL
