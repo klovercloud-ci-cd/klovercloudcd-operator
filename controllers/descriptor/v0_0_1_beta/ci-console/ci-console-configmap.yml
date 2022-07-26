@@ -4,6 +4,6 @@ metadata:
   name: klovercloud-ci-console-envar-config
   namespace: klovercloud
 data:
-  v1AuthEndpoint: "http://klovercloud-security.klovercloud.svc.cluster.local/api/v1"
-  v1ApiEndPoint: "http://klovercloud-api-service.klovercloud.svc.cluster.local/api/v1"
-  v1ApiEndPointWS: "ws://klovercloud-ci-event-bank.klovercloud.svc.cluster.local/api/v1"
+  V1_AUTH_ENDPOINT: "http://klovercloud-security.klovercloud.svc.cluster.local/api/v1"
+  V1_API_ENDPOINT: "http://klovercloud-api-service.klovercloud.svc.cluster.local/api/v1"
+  V1_API_ENDPOINT_WS: "ws://klovercloud-ci-event-bank.klovercloud.svc.cluster.local/api/v1"

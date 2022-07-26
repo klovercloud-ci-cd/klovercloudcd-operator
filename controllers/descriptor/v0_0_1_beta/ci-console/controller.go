@@ -30,9 +30,9 @@ func (c console) ModifyConfigmap(namespace string, console v1alpha1.UIConsole) s
 	}
 	c.Configmap.ObjectMeta.Labels["app"] = "klovercloudCD"
 	c.Configmap.ObjectMeta.Namespace = namespace
-	c.Configmap.Data["v1AuthEndpoint"] = console.AuthEndpoint
-	c.Configmap.Data["v1ApiEndPoint"] = console.ApiEndpoint
-	c.Configmap.Data["v1ApiEndPointWS"] = console.ApiEndpointWS
+	c.Configmap.Data["V1_AUTH_ENDPOINT"] = console.AuthEndpoint
+	c.Configmap.Data["V1_API_ENDPOINT"] = console.ApiEndpoint
+	c.Configmap.Data["V1_API_ENDPOINT_WS"] = console.ApiEndpointWS
 	return c
 }
 

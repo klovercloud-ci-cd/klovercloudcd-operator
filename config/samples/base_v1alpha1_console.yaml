@@ -7,9 +7,9 @@ spec:
   version: v0.0.1-beta
   console:
     size: 1
-    auth_endpoint: "abc"
-    api_endpoint: "abc"
-    api_endpoint_ws: "adcws"
+    auth_endpoint: "http://klovercloud-security.klovercloud.svc.cluster.local/api/v1"
+    api_endpoint: "http://klovercloud-api-service.klovercloud.svc.cluster.local/api/v1"
+    api_endpoint_ws: "ws://klovercloud-ci-event-bank.klovercloud.svc.cluster.local/api/v1"
     resources:
       requests:
         cpu: 100m

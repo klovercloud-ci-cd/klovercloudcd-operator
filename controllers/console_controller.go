@@ -107,17 +107,17 @@ func (r *ConsoleReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 	redeploy := false
 	redeployConfigmap := false
 
-	if existingUIConsoleConfigmap.Data["v1AuthEndpoint"] != config.Spec.Console.AuthEndpoint {
+	if existingUIConsoleConfigmap.Data["V1_AUTH_ENDPOINT"] != config.Spec.Console.AuthEndpoint {
 		redeployConfigmap = true
-		existingUIConsoleConfigmap.Data["v1AuthEndpoint"] = config.Spec.Console.AuthEndpoint
+		existingUIConsoleConfigmap.Data["V1_AUTH_ENDPOINT"] = config.Spec.Console.AuthEndpoint
 	}
-	if existingUIConsoleConfigmap.Data["v1ApiEndPoint"] != config.Spec.Console.ApiEndpoint {
+	if existingUIConsoleConfigmap.Data["V1_API_ENDPOINT"] != config.Spec.Console.ApiEndpoint {
 		redeployConfigmap = true
-		existingUIConsoleConfigmap.Data["v1ApiEndPoint"] = config.Spec.Console.ApiEndpoint
+		existingUIConsoleConfigmap.Data["V1_API_ENDPOINT"] = config.Spec.Console.ApiEndpoint
 	}
-	if existingUIConsoleConfigmap.Data["v1ApiEndPointWS"] != config.Spec.Console.ApiEndpointWS {
+	if existingUIConsoleConfigmap.Data["V1_API_ENDPOINT_WS"] != config.Spec.Console.ApiEndpointWS {
 		redeployConfigmap = true
-		existingUIConsoleConfigmap.Data["v1ApiEndPointWS"] = config.Spec.Console.ApiEndpointWS
+		existingUIConsoleConfigmap.Data["V1_API_ENDPOINT_WS"] = config.Spec.Console.ApiEndpointWS
 	}
 
 	for i, each := range existingUIConsoleService.Spec.Template.Spec.Containers {
