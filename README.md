@@ -18,7 +18,7 @@ make deploy IMG=quay.io/klovercloud/klovercloudcd-operator:<tag>
 ```sh
 make deploy IMG=quay.io/klovercloud/klovercloudcd-operator:v0.0.1-beta
 ```
-| Available releases  | Documentations                    |
+| Releases  | Documentations                    |
 |-------------|-----------------------------------|
 | v0.0.1-beta | [v0.0.1-beta](doc/v0.0.1-beta.md) |
 
