@@ -20,7 +20,7 @@ make deploy IMG=quay.io/klovercloud/klovercloudcd-operator:v0.0.1-beta
 ```
 | Releases  | Documentations                    |
 |-------------|-----------------------------------|
-| [v0.0.1-beta](https://github.com/klovercloud-ci-cd/klovercloudcd-operator) | [v0.0.1-beta](doc/v0.0.1-beta.md) |
+| [v0.0.1-beta](https://github.com/klovercloud-ci-cd/klovercloudcd-operator/releases/tag/v0.0.1-beta) | [v0.0.1-beta](doc/v0.0.1-beta.md) |
 
 #### Delete operator:
 ```shell
