@@ -863,9 +863,9 @@ func (r *KlovercloudCDReconciler) Reconcile(ctx context.Context, req ctrl.Reques
 			}
 		}
 		if redeployConfigmap {
-			err = r.Update(ctx, existingLightHouseCommand)
+			err = r.Update(ctx, existingLightHouseCommandConfigmap)
 			if err != nil {
-				log.Error(err, "Failed to update Configmap.", "Namespace:", existingLightHouseCommand.Namespace, "Name:", existingLightHouseCommand.Name)
+				log.Error(err, "Failed to update Configmap.", "Namespace:", existingLightHouseCommand.Namespace, "Name:", existingLightHouseCommandConfigmap.Name)
 				return ctrl.Result{}, err
 			}
 			redeploy = true
@@ -982,9 +982,9 @@ func (r *KlovercloudCDReconciler) Reconcile(ctx context.Context, req ctrl.Reques
 			}
 		}
 		if redeployConfigmap {
-			err = r.Update(ctx, existingLightHouseQuery)
+			err = r.Update(ctx, existingLightHouseQueryConfigmap)
 			if err != nil {
-				log.Error(err, "Failed to update Configmap.", "Namespace:", existingLightHouseQuery.Namespace, "Name:", existingLightHouseQuery.Name)
+				log.Error(err, "Failed to update Configmap.", "Namespace:", existingLightHouseQueryConfigmap.Namespace, "Name:", existingLightHouseQueryConfigmap.Name)
 				return ctrl.Result{}, err
 			}
 			redeploy = true
@@ -1225,6 +1225,7 @@ func (r *KlovercloudCDReconciler) SetupWithManager(mgr ctrl.Manager) error {
 		Owns(&corev1.ServiceAccount{}).
 		Owns(&corev1.Namespace{}).
 		Owns(&rbacv1.ClusterRole{}).
+		Owns(&rbacv1.ClusterRoleBinding{}).
 		Owns(&rbacv1.RoleBinding{}).
 		Owns(&rbacv1.Role{}).
 		Owns(&corev1.Service{}).
